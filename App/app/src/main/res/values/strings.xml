@@ -1,0 +1,15 @@
+<resources>
+    <string name="app_name">Super Smart Key</string>
+    <string name="settings_title">Settings</string>
+    <string name="menu_back">Back</string>
+    <string name="link_key">Link Key</string>
+    <string name="change_key">Change Key</string>
+    <string name="notification_text">Tap to open</string>
+    <string name="notification_title">Service is running</string>
+    <string name="stop_service">Stop</string>
+    <string name="no_bluetooth_title">Bluetooth Not Supported</string>
+    <string name="no_bluetooth_text">This device does not support Bluetooth</string>
+    <string name="bluetooth_title">Bluetooth Devices</string>
+    <string name="bluetooth_scanning_text">Scanning…</string>
+    <string name="bluetooth_default_text">Select your key</string>
+</resources>
