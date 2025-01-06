@@ -293,6 +293,7 @@ fun HomeContentPreview() {
     AppTheme {
         Scaffold(
             modifier = Modifier.fillMaxSize(),
+            topBar = { HomeTopAppBar(onSettings = {}) },
             floatingActionButton = {
                 LinkButton(isLinked = false, onClick = {})
             },

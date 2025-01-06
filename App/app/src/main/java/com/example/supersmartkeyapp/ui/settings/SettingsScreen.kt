@@ -1,11 +1,13 @@
 package com.example.supersmartkeyapp.ui.settings
 
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.foundation.layout.width
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Slider
@@ -22,9 +24,17 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.supersmartkeyapp.ui.theme.AppTheme
+import com.example.supersmartkeyapp.util.DEFAULT_GRACE_PERIOD
+import com.example.supersmartkeyapp.util.DEFAULT_POLLING_RATE
+import com.example.supersmartkeyapp.util.DEFAULT_RSSI_THRESHOLD
+import com.example.supersmartkeyapp.util.MAX_GRACE_PERIOD
+import com.example.supersmartkeyapp.util.MAX_POLLING_RATE
 import com.example.supersmartkeyapp.util.MAX_RSSI_THRESHOLD
+import com.example.supersmartkeyapp.util.MIN_GRACE_PERIOD
+import com.example.supersmartkeyapp.util.MIN_POLLING_RATE
 import com.example.supersmartkeyapp.util.MIN_RSSI_THRESHOLD
 import com.example.supersmartkeyapp.util.SettingsTopAppBar
+import kotlin.math.roundToInt
 
 @Composable
 fun SettingsScreen(
@@ -32,16 +42,23 @@ fun SettingsScreen(
     modifier: Modifier = Modifier,
     viewModel: SettingsViewModel = hiltViewModel()
 ) {
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     Scaffold(
         modifier = modifier.fillMaxSize(),
         topBar = { SettingsTopAppBar(onBack) },
     ) { paddingValues ->
-        val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
         SettingsContent(
             rssiThreshold = uiState.rssiThreshold,
-            onRssiThresholdChanged = viewModel::updateRssiThreshold,
+            onRssiThresholdChange = viewModel::updateRssiThreshold,
             saveRssiThreshold = viewModel::saveRssiThreshold,
+//            TODO: Update viewmodel
+            gracePeriod = 0,
+            onGracePeriodChange = { },
+            saveGracePeriod = { },
+            pollingRate = 0,
+            onPollingRateChange = { },
+            savePollingRate = { },
             modifier = Modifier.padding(paddingValues),
         )
     }
@@ -50,68 +67,106 @@ fun SettingsScreen(
 @Composable
 private fun SettingsContent(
     rssiThreshold: Int,
-    onRssiThresholdChanged: (Int) -> Unit,
+    onRssiThresholdChange: (Int) -> Unit,
     saveRssiThreshold: () -> Unit,
+    gracePeriod: Int,
+    onGracePeriodChange: (Int) -> Unit,
+    saveGracePeriod: () -> Unit,
+    pollingRate: Int,
+    onPollingRateChange: (Int) -> Unit,
+    savePollingRate: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     Column(
         modifier = modifier
             .fillMaxSize()
-            .padding(horizontal = 32.dp)
+            .padding(horizontal = 16.dp)
     ) {
-        SettingRSSIThreshold(
-            rssiThreshold = rssiThreshold,
-            onRssiThresholdChanged = onRssiThresholdChanged,
-            saveRssiThreshold = saveRssiThreshold
+//        RSSI THRESHOLD
+        SettingsIntSlider(
+            title = "RSSI Threshold",
+            units = "dBm",
+            value = rssiThreshold,
+            onValueChange = onRssiThresholdChange,
+            onValueChangeFinished = saveRssiThreshold,
+            minVal = MIN_RSSI_THRESHOLD,
+            maxVal = MAX_RSSI_THRESHOLD,
+            steps = (MAX_RSSI_THRESHOLD - MIN_RSSI_THRESHOLD) - 1
+        )
+        HorizontalDivider()
+        SettingsIntSlider(
+            title = "Grace Period",
+            units = "s",
+            value = gracePeriod,
+            onValueChange = onGracePeriodChange,
+            onValueChangeFinished = saveGracePeriod,
+            minVal = MIN_GRACE_PERIOD,
+            maxVal = MAX_GRACE_PERIOD,
+            steps = (MAX_GRACE_PERIOD - MIN_GRACE_PERIOD) - 1
+        )
+        HorizontalDivider()
+        SettingsIntSlider(
+            title = "Polling Rate",
+            units = "s",
+            value = pollingRate,
+            onValueChange = onPollingRateChange,
+            onValueChangeFinished = savePollingRate,
+            minVal = MIN_POLLING_RATE,
+            maxVal = MAX_POLLING_RATE,
+            steps = (MAX_POLLING_RATE - MIN_POLLING_RATE) - 1
         )
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun SettingRSSIThreshold(
-    rssiThreshold: Int,
-    onRssiThresholdChanged: (Int) -> Unit,
-    saveRssiThreshold: () -> Unit
+private fun SettingsIntSlider(
+    title: String,
+    units: String,
+    value: Int,
+    onValueChange: (Int) -> Unit,
+    onValueChangeFinished: () -> Unit,
+    minVal: Int,
+    maxVal: Int,
+    steps: Int
 ) {
     val colors = SliderDefaults.colors(
         activeTickColor = Color.Transparent,
         inactiveTickColor = Color.Transparent,
     )
-    Column {
+    Text(
+        text = title,
+        style = MaterialTheme.typography.bodyLarge,
+        modifier = Modifier.padding(top = 16.dp)
+    )
+    Text(
+        text = "$value $units",
+        style = MaterialTheme.typography.bodySmall,
+    )
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.SpaceBetween,
+        modifier = Modifier
+            .fillMaxWidth()
+    ) {
         Text(
-            "RSSI Threshold: $rssiThreshold dBm",
-            style = MaterialTheme.typography.bodyLarge
+            "$minVal",
+            style = MaterialTheme.typography.bodySmall,
+            modifier = Modifier.padding(end = 4.dp)
         )
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Text(
-                "$MIN_RSSI_THRESHOLD",
-                style = MaterialTheme.typography.bodySmall,
-                modifier = Modifier.padding(end = 4.dp)
-            )
-            Slider(
-                value = rssiThreshold.toFloat(),
-                onValueChange = { onRssiThresholdChanged(it.toInt()) },
-                onValueChangeFinished = saveRssiThreshold,
-                valueRange = MIN_RSSI_THRESHOLD.toFloat()..MAX_RSSI_THRESHOLD.toFloat(),
-                steps = MAX_RSSI_THRESHOLD - MIN_RSSI_THRESHOLD - 1,
-                track = { sliderState ->
-                    SliderDefaults.Track(
-                        colors = colors,
-                        sliderState = sliderState
-                    )
-                },
-                modifier = Modifier.weight(1f)
-            )
-            Text(
-                "$MAX_RSSI_THRESHOLD",
-                style = MaterialTheme.typography.bodySmall,
-                modifier = Modifier.padding(start = 4.dp)
-            )
-        }
+        Slider(
+            value = value.toFloat(),
+            onValueChange = { onValueChange(it.roundToInt()) },
+            onValueChangeFinished = onValueChangeFinished,
+            valueRange = minVal.toFloat()..maxVal.toFloat(),
+            steps = steps,
+            colors = colors,
+            modifier = Modifier.width(300.dp)
+        )
+        Text(
+            "$maxVal",
+            style = MaterialTheme.typography.bodySmall,
+            modifier = Modifier.padding(start = 4.dp)
+        )
     }
 }
 
@@ -120,7 +175,23 @@ private fun SettingRSSIThreshold(
 fun SettingsContentPreview() {
     AppTheme {
         Surface {
-            SettingsContent(-30, {}, {})
+            Scaffold(
+                modifier = Modifier.fillMaxSize(),
+                topBar = { SettingsTopAppBar(onBack = {}) },
+            ) { paddingValues ->
+                SettingsContent(
+                    rssiThreshold = DEFAULT_RSSI_THRESHOLD,
+                    onRssiThresholdChange = {},
+                    saveRssiThreshold = {},
+                    gracePeriod = DEFAULT_GRACE_PERIOD,
+                    onGracePeriodChange = {},
+                    saveGracePeriod = {},
+                    pollingRate = DEFAULT_POLLING_RATE,
+                    onPollingRateChange = {},
+                    savePollingRate = {},
+                    modifier = Modifier.padding(paddingValues)
+                )
+            }
         }
     }
 }
