@@ -9,13 +9,13 @@
     <string name="stop_service">Stop</string>
     <string name="no_bluetooth_title">Bluetooth Not Supported</string>
     <string name="no_bluetooth_text">This device does not support Bluetooth</string>
-    <string name="bluetooth_title">Bluetooth Devices</string>
-    <string name="bluetooth_scanning_text">Scanning…</string>
-    <string name="bluetooth_default_text">Select your key</string>
+    <string name="key_dialog_title">Available Keys</string>
+    <string name="key_dialog_text">Select your key</string>
     <string name="rssi_threshold_settings_title">RSSI Threshold</string>
     <string name="rssi_threshold_units">dBm</string>
     <string name="grace_period_settings_title">Grace Period</string>
     <string name="grace_period_units">s</string>
     <string name="polling_rate_settings_title">Polling Rate</string>
     <string name="polling_rate_units">s</string>
+    <string name="cancel">Cancel</string>
 </resources>

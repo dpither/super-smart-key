@@ -2,7 +2,6 @@ package com.example.supersmartkeyapp.ui.home
 
 import android.app.Activity
 import android.app.admin.DevicePolicyManager
-import android.bluetooth.BluetoothDevice
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
@@ -11,27 +10,37 @@ import androidx.activity.compose.ManagedActivityResultLauncher
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.ActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Card
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LargeFloatingActionButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
@@ -39,12 +48,13 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.Dialog
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.supersmartkeyapp.R
 import com.example.supersmartkeyapp.admin.DeviceAdmin
+import com.example.supersmartkeyapp.data.Key
 import com.example.supersmartkeyapp.service.SuperSmartKeyService
-import com.example.supersmartkeyapp.ui.BluetoothDialog
 import com.example.supersmartkeyapp.ui.theme.AppTheme
 import com.example.supersmartkeyapp.util.HomeTopAppBar
 import com.example.supersmartkeyapp.util.RequestPermissions
@@ -73,8 +83,8 @@ fun HomeScreen(
         modifier = modifier.fillMaxSize(),
         topBar = { HomeTopAppBar(onSettings) },
         floatingActionButton = {
-            LinkButton(
-                isLinked = uiState.isKeyLinked,
+            LinkKeyButton(
+                isKeyLinked = uiState.key != null,
                 onClick = {
                     SuperSmartKeyService.stopService(context)
                     viewModel.updateShowDialog(true)
@@ -84,22 +94,23 @@ fun HomeScreen(
     ) { paddingValues ->
 
         HomeContent(
-            deviceAddress = uiState.deviceAddress,
-            deviceName = uiState.deviceName,
-            rssi = uiState.rssi,
+            availableKeys = uiState.availableKeys,
+            key = uiState.key,
             isServiceRunning = uiState.isServiceRunning,
-            isKeyLinked = uiState.isKeyLinked,
             onStart = {
-                requestDeviceAdmin(context = context, deviceAdminLauncher = deviceAdminLauncher)
-                SuperSmartKeyService.runService(context)
+                viewModel.updateIsServiceRunning(true)
+//                requestDeviceAdmin(context = context, deviceAdminLauncher = deviceAdminLauncher)
+//                SuperSmartKeyService.runService(context)
             },
             onStop = {
-                SuperSmartKeyService.stopService(context)
+//                SuperSmartKeyService.stopService(context)
+                viewModel.updateIsServiceRunning(false)
             },
             showDialog = uiState.showDialog,
-            onDeviceSelected = {
-                viewModel.updateDevice(it)
-                SuperSmartKeyService.startService(context, it.address)
+//            TODO: updatedevice select
+            onKeySelected = {
+                viewModel.linkKey(it)
+//                SuperSmartKeyService.startService(context, it.address)
             },
             closeDialog = { viewModel.updateShowDialog(false) },
             modifier = Modifier.padding(paddingValues)
@@ -110,20 +121,22 @@ fun HomeScreen(
 
 @Composable
 private fun HomeContent(
-    deviceAddress: String,
-    deviceName: String,
-    rssi: Int,
+    key: Key?,
     isServiceRunning: Boolean,
-    isKeyLinked: Boolean,
+    availableKeys: List<Key>,
+    onKeySelected: (Key) -> Unit,
     onStart: () -> Unit,
     onStop: () -> Unit,
-    onDeviceSelected: (BluetoothDevice) -> Unit,
-    closeDialog: () -> Unit,
     showDialog: Boolean,
+    closeDialog: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     if (showDialog) {
-        BluetoothDialog(onDismiss = closeDialog, onDeviceSelected = onDeviceSelected)
+        AvailableKeysDialog(
+            availableKeys = availableKeys,
+            onDismiss = closeDialog,
+            onKeySelected = onKeySelected
+        )
     }
     Box(
         modifier = modifier
@@ -138,11 +151,8 @@ private fun HomeContent(
                 .fillMaxWidth()
         ) {
             StatusText(
-                deviceAddress = deviceAddress,
-                deviceName = deviceName,
-                rssi = rssi,
+                key = key,
                 isServiceRunning = isServiceRunning,
-                isKeyLinked = isKeyLinked
             )
         }
         Box(
@@ -151,7 +161,7 @@ private fun HomeContent(
         ) {
             StartStopButton(
                 isServiceRunning = isServiceRunning,
-                isKeyLinked = isKeyLinked,
+                isKeyLinked = (key != null),
                 onStart = onStart,
                 onStop = onStop,
             )
@@ -160,30 +170,29 @@ private fun HomeContent(
 }
 
 @Composable
-private fun LinkButton(
-    isLinked: Boolean,
+private fun LinkKeyButton(
+    isKeyLinked: Boolean,
     onClick: () -> Unit
 ) {
     RequestPermissions()
     LargeFloatingActionButton(
-        onClick =
-        onClick
+        onClick = onClick
     ) {
         Icon(
             imageVector =
-            if (isLinked) {
+            if (isKeyLinked) {
                 ImageVector.vectorResource(R.drawable.swap)
             } else {
                 ImageVector.vectorResource(R.drawable.link)
             },
             contentDescription =
-            if (isLinked) {
+            if (isKeyLinked) {
                 stringResource(R.string.change_key)
             } else {
                 stringResource(R.string.link_key)
             },
             modifier =
-            if (isLinked) {
+            if (isKeyLinked) {
                 Modifier.rotate(0f)
             } else {
                 Modifier.rotate(45f)
@@ -218,30 +227,25 @@ private fun StartStopButton(
 
 @Composable
 private fun StatusText(
-    deviceAddress: String,
-    deviceName: String,
-    rssi: Int,
+    key: Key?,
     isServiceRunning: Boolean,
-    isKeyLinked: Boolean,
 ) {
     val titleStyle = MaterialTheme.typography.titleSmall
     val textStyle = MaterialTheme.typography.bodyLarge
+    val isKeyLinked = key != null
     Column {
         Text(
             text = "Target Key:",
             style = titleStyle
         )
-        Text(
-            text =
-            if (isKeyLinked) {
-                deviceName.ifEmpty {
-                    deviceAddress
-                }
-            } else {
-                ""
-            },
-            style = textStyle
-        )
+        if (key != null) {
+            Text(
+                text = key.name,
+                style = textStyle
+            )
+        } else {
+            Text("")
+        }
         Spacer(modifier = Modifier.size(8.dp))
         Text(
             text = "Status:",
@@ -260,15 +264,111 @@ private fun StatusText(
             text = "RSSI:",
             style = titleStyle
         )
-        Text(
-            text = if (isKeyLinked) {
-                "$rssi dBm"
-            } else {
-                ""
-            },
-            style = textStyle
-        )
+        if (key != null) {
+            Text(
+                text = "${key.rssi} dBm",
+                style = textStyle
+            )
+        } else {
+            Text("")
+        }
+    }
+}
 
+@Composable
+private fun AvailableKeysDialog(
+    availableKeys: List<Key>,
+    onDismiss: () -> Unit,
+    onKeySelected: (Key) -> Unit
+) {
+    val scrollState = rememberScrollState()
+
+    Dialog(
+        onDismissRequest = onDismiss
+    ) {
+        Card(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(IntrinsicSize.Max),
+            shape = RoundedCornerShape(8.dp),
+        ) {
+            Column(
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(8.dp)
+            ) {
+                Column {
+                    Text(
+                        text = stringResource(R.string.key_dialog_title),
+                        style = MaterialTheme.typography.titleLarge
+                    )
+                    Text(
+                        text = stringResource(R.string.key_dialog_text),
+                    )
+                }
+                Column {
+                    HorizontalDivider()
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(320.dp)
+                            .verticalScroll(scrollState)
+                    ) {
+//                    TODO:
+                        if (availableKeys.isEmpty()) {
+                            Text("EMPTYYYYYYY")
+                        } else {
+                            availableKeys.forEachIndexed { index, key ->
+                                KeyRow(
+                                    name = key.name,
+                                    address = key.device.address,
+                                    onClick = { onKeySelected(key) }
+                                )
+                                if (index != availableKeys.lastIndex) {
+                                    HorizontalDivider()
+                                }
+                            }
+                        }
+                    }
+                    HorizontalDivider()
+                }
+                TextButton(
+                    onClick = { onDismiss() },
+                    shape = RoundedCornerShape(8.dp),
+                    modifier = Modifier
+                        .fillMaxWidth(),
+
+                ) {
+                    Text(text = stringResource(R.string.cancel))
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun KeyRow(
+    name: String,
+    address: String,
+    onClick: () -> Unit,
+) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(8.dp))
+            .clickable(onClick = onClick),
+    ) {
+        Column(modifier = Modifier.padding(8.dp)) {
+            Text(
+                text = name,
+                style = MaterialTheme.typography.bodyLarge,
+            )
+            Text(
+                text = "Address: $address",
+                style = MaterialTheme.typography.bodySmall,
+            )
+        }
     }
 }
 
@@ -295,22 +395,44 @@ fun HomeContentPreview() {
             modifier = Modifier.fillMaxSize(),
             topBar = { HomeTopAppBar(onSettings = {}) },
             floatingActionButton = {
-                LinkButton(isLinked = false, onClick = {})
+                LinkKeyButton(isKeyLinked = false, onClick = {})
             },
         ) { paddingValues ->
             HomeContent(
+                key = null,
+                availableKeys = emptyList(),
                 isServiceRunning = false,
-                isKeyLinked = true,
                 onStart = {},
                 onStop = {},
                 closeDialog = {},
-                deviceAddress = "",
-                deviceName = "ESP 32",
-                rssi = 0,
-                onDeviceSelected = {},
+                onKeySelected = {},
                 showDialog = false,
                 modifier = Modifier.padding(paddingValues)
             )
         }
+    }
+}
+
+@Preview
+@Composable
+fun AvailableKeysDialogPreview() {
+    AppTheme {
+        AvailableKeysDialog(
+            availableKeys = emptyList(),
+            onDismiss = {},
+            onKeySelected = {}
+        )
+    }
+}
+
+@Preview
+@Composable
+fun KeyRowPreview() {
+    AppTheme {
+        KeyRow(
+            name = "Smart Tag2",
+            address = "00:11:22:AA:BB:CC",
+            onClick = {}
+        )
     }
 }

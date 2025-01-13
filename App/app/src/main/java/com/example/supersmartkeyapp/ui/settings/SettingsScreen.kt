@@ -49,7 +49,7 @@ fun SettingsScreen(
         modifier = modifier.fillMaxSize(),
         topBar = { SettingsTopAppBar(onBack) },
     ) { paddingValues ->
-
+        
         SettingsContent(
             rssiThreshold = uiState.rssiThreshold,
             onRssiThresholdChange = viewModel::updateRssiThreshold,
@@ -79,10 +79,10 @@ private fun SettingsContent(
     modifier: Modifier = Modifier
 ) {
     Column(
-        verticalArrangement = Arrangement.spacedBy(16.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
         modifier = modifier
             .fillMaxSize()
-            .padding(horizontal = 16.dp)
+            .padding(horizontal = 8.dp)
     ) {
         SettingsIntSlider(
             title = stringResource(R.string.rssi_threshold_settings_title),
@@ -94,6 +94,7 @@ private fun SettingsContent(
             maxVal = MAX_RSSI_THRESHOLD,
             steps = (MAX_RSSI_THRESHOLD - MIN_RSSI_THRESHOLD) - 1
         )
+        HorizontalDivider()
         SettingsIntSlider(
             title = stringResource(R.string.grace_period_settings_title),
             units = stringResource(R.string.grace_period_units),
@@ -104,6 +105,7 @@ private fun SettingsContent(
             maxVal = MAX_GRACE_PERIOD,
             steps = (MAX_GRACE_PERIOD - MIN_GRACE_PERIOD) - 1
         )
+        HorizontalDivider()
         SettingsIntSlider(
             title = stringResource(R.string.polling_rate_settings_title),
             units = stringResource(R.string.polling_rate_units),
@@ -158,7 +160,7 @@ private fun SettingsIntSlider(
                 valueRange = minVal.toFloat()..maxVal.toFloat(),
                 steps = steps,
                 colors = colors,
-                modifier = Modifier.width(300.dp)
+                modifier = Modifier.width(320.dp)
             )
             Text(
                 "$maxVal",
@@ -166,7 +168,6 @@ private fun SettingsIntSlider(
                 modifier = Modifier.align(Alignment.CenterEnd)
             )
         }
-        HorizontalDivider()
     }
 }
 

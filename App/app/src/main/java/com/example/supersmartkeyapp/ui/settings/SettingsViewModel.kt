@@ -29,10 +29,10 @@ class SettingsViewModel @Inject constructor(
     val uiState: StateFlow<SettingsUiState> = _uiState
 
     init {
-        loadSettings()
+        loadUiState()
     }
 
-    private fun loadSettings() {
+    private fun loadUiState() {
         _uiState.update {
             it.copy(isLoading = true)
         }
@@ -40,9 +40,7 @@ class SettingsViewModel @Inject constructor(
         viewModelScope.launch {
             serviceRepository.rssiThreshold.collect { rssiThreshold ->
                 _uiState.update {
-                    it.copy(
-                        rssiThreshold = rssiThreshold,
-                    )
+                    it.copy(rssiThreshold = rssiThreshold)
                 }
             }
         }
@@ -50,9 +48,7 @@ class SettingsViewModel @Inject constructor(
         viewModelScope.launch {
             serviceRepository.gracePeriod.collect { gracePeriod ->
                 _uiState.update {
-                    it.copy(
-                        gracePeriod = gracePeriod,
-                    )
+                    it.copy(gracePeriod = gracePeriod)
                 }
             }
         }

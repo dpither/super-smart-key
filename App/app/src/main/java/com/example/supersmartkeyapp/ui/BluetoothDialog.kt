@@ -2,6 +2,8 @@ package com.example.supersmartkeyapp.ui
 
 import android.annotation.SuppressLint
 import android.bluetooth.BluetoothDevice
+import android.bluetooth.BluetoothGatt
+import android.bluetooth.BluetoothGattCallback
 import android.bluetooth.BluetoothManager
 import android.bluetooth.BluetoothProfile
 import android.bluetooth.le.ScanCallback
@@ -38,6 +40,7 @@ import kotlin.math.max
 
 
 private const val SCAN_PERIOD: Long = 10000
+private const val TAG: String = "BLUETOOTH DIALOG"
 
 @SuppressLint("MissingPermission", "NewApi")
 @Composable
@@ -85,23 +88,57 @@ fun BluetoothDialog(
         }
     }
 
+
+    val testGatt = object :BluetoothGattCallback() {
+        override fun onConnectionStateChange(gatt: BluetoothGatt, status: Int, newState: Int) {
+            super.onConnectionStateChange(gatt, status, newState)
+            if (status == BluetoothGatt.GATT_SUCCESS) {
+                gatt.discoverServices()
+            }
+        }
+
+        override fun onServicesDiscovered(gatt: BluetoothGatt, status: Int) {
+            super.onServicesDiscovered(gatt, status)
+
+            if (status == BluetoothGatt.GATT_SUCCESS) {
+                Log.d(TAG,"SERVICES DISCOVERED")
+                gatt.services.forEach { service ->
+                    Log.d(TAG, "UUID Version: ${service.uuid.version()} UUID: ${service.uuid} LSB: ${service.uuid.leastSignificantBits} MSB: ${service.uuid.mostSignificantBits}")
+                }
+                Log.d(TAG, "NAME?: ${gatt.device.name}")
+            }
+            else{
+                Log.e(TAG,"Status: $status")
+            }
+        }
+    }
+
+
     LaunchedEffect(Unit) {
         bleDevices.clear()
         bluetoothManager.getConnectedDevices(BluetoothProfile.GATT).forEach {
-            Log.d(
-                "BLUETOOTH DIAGLOG GATT",
-                "Address: ${it.address} \n Name: ${it.name} \n UUIDs: ${it.uuids} \n Type: ${it.type}"
-            )
+            Log.d(TAG, "Address: ${it.address}")
+            Log.d(TAG, "Alias: ${it.alias}")
+            Log.d(TAG, "Bluetooth Major Device Class: ${it.bluetoothClass.majorDeviceClass}")
+            Log.d(TAG, "Bluetooth Device Class: ${it.bluetoothClass.deviceClass}")
+            Log.d(TAG, "Bond State: ${it.bondState}")
+            Log.d(TAG, "Name: ${it.name}")
+            Log.d(TAG, "Type: ${it.type}")
+            try {
+                it.uuids.forEach { uuid ->
+                    Log.d(TAG, "UUID: $uuid")
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "$e")
+//                it.connectGatt(context, false, testGatt)
+//                val wut = it.fetchUuidsWithSdp()
+//                Log.d(TAG, "Wut: $wut")
+            }
+
             bleDevices.add(it)
-            rssis[it] = -100000
+            rssis[it] = 0
         }
-        bluetoothAdapter.bondedDevices.forEach{
-            Log.d(
-                "BLUETOOTH DIAGLOG BONDED",
-                "Address: ${it.address} \n Name: ${it.name} \n UUIDs: ${it.uuids} \n Type: ${it.type}"
-            )
-        }
-        scan()
+//        scan()
     }
     ScanDialog(
         devices = bleDevices,
@@ -140,14 +177,14 @@ private fun ScanDialog(
             ) {
                 Column {
                     Text(
-                        text = stringResource(R.string.bluetooth_title),
+                        text = "bluetooth_title",
                         style = MaterialTheme.typography.titleLarge
                     )
                     Text(
                         text = if (isScanning) {
-                            stringResource(R.string.bluetooth_scanning_text)
+                            "bluetooth_scanning_text"
                         } else {
-                            stringResource(R.string.bluetooth_default_text)
+                           "bluetooth_default_text"
                         },
                     )
                 }
@@ -159,10 +196,6 @@ private fun ScanDialog(
 
                 ) {
                     devices.forEach { device ->
-                        Log.d(
-                            "BLUETOOTH DIAGLOG",
-                            "Address: ${device.address} \n Name: ${device.name} \n UUIDs: ${device.uuids} \n Type: ${device.type}"
-                        )
                         ScanRow(name = device.name,
                             address = device.address,
                             rssi = rssis[device]!!,

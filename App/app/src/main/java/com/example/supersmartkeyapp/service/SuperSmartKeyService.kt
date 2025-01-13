@@ -24,6 +24,7 @@ import androidx.core.app.ServiceCompat
 import com.example.supersmartkeyapp.R
 import com.example.supersmartkeyapp.SuperSmartKeyActivity
 import com.example.supersmartkeyapp.admin.DeviceAdmin
+import com.example.supersmartkeyapp.data.KeyRepository
 import com.example.supersmartkeyapp.data.ServiceRepository
 import com.example.supersmartkeyapp.data.SettingsRepository
 import dagger.hilt.android.AndroidEntryPoint
@@ -45,9 +46,9 @@ const val TAG = "SSK_SERVICE"
 class SuperSmartKeyService : Service() {
     @Inject
     lateinit var serviceRepository: ServiceRepository
-
     @Inject
-    lateinit var settingsRepository: SettingsRepository
+    lateinit var keyRepository: KeyRepository
+
     private val serviceScope = CoroutineScope(Dispatchers.IO + Job())
     private val rssiPollerScope = CoroutineScope(Dispatchers.IO + Job())
     private val bluetoothManager: BluetoothManager by lazy {
@@ -91,10 +92,10 @@ class SuperSmartKeyService : Service() {
         val channel = NotificationChannel(CHANNEL_ID, CHANNEL_NAME, importance)
         val notificationManager: NotificationManager =
             getSystemService(NotificationManager::class.java)
-
-        serviceScope.launch {
-            serviceRepository.updateIsKeyLinked(false)
-        }
+//        TODO: REFACTOR
+//        serviceScope.launch {
+//            serviceRepository.updateIsKeyLinked(false)
+//        }
         serviceScope.launch {
             serviceRepository.updateIsServiceRunning(false)
         }
@@ -110,16 +111,17 @@ class SuperSmartKeyService : Service() {
                 stopSelf() // Stop the service
             }
             ACTION_START -> {
-                val deviceAddress = intent.getStringExtra(DEVICE_ADDRESS_EXTRA)
-                val bluetoothAdapter = bluetoothManager.adapter
-                try {
-                    val bluetoothDevice = bluetoothAdapter.getRemoteDevice(deviceAddress)
-                    Log.d(TAG, "Target Device: ${bluetoothDevice.name ?: bluetoothDevice.address}")
-                    bluetoothGatt = bluetoothDevice.connectGatt(this, false, gattCallback)
-                } catch (exception: IllegalArgumentException) {
-                    Log.w(TAG, "Device not found with provided address")
-                    stopService(this)
-                }
+//                TODO: Refactor
+//                val deviceAddress = intent.getStringExtra(DEVICE_ADDRESS_EXTRA)
+//                val bluetoothAdapter = bluetoothManager.adapter
+//                try {
+//                    val bluetoothDevice = bluetoothAdapter.getRemoteDevice(deviceAddress)
+//                    Log.d(TAG, "Target Device: ${bluetoothDevice.name ?: bluetoothDevice.address}")
+//                    bluetoothGatt = bluetoothDevice.connectGatt(this, false, gattCallback)
+//                } catch (exception: IllegalArgumentException) {
+//                    Log.w(TAG, "Device not found with provided address")
+//                    stopService(this)
+//                }
             }
             ACTION_RUN -> {
                 startForeground()
@@ -137,62 +139,64 @@ class SuperSmartKeyService : Service() {
         super.onDestroy()
         bluetoothGatt?.disconnect()
         bluetoothGatt?.close()
-        serviceScope.launch {
-            serviceRepository.updateIsKeyLinked(false)
-        }
+//        TODO: REFACTOR
+//        serviceScope.launch {
+//            serviceRepository.updateIsKeyLinked(false)
+//        }
         serviceScope.launch {
             serviceRepository.updateIsServiceRunning(false)
         }
         rssiPollerScope.cancel()
     }
 
-    private val gattCallback = object : BluetoothGattCallback() {
-        override fun onReadRemoteRssi(gatt: BluetoothGatt?, readRssi: Int, status: Int) {
-            super.onReadRemoteRssi(gatt, readRssi, status)
-            if (status == BluetoothGatt.GATT_SUCCESS) {
-                Log.d(TAG, "Device RSSI: $readRssi dBm")
-                serviceScope.launch {
-                    serviceRepository.updateRssi(readRssi)
-                }
-                serviceScope.launch {
-                    combine(
-                        serviceRepository.isServiceRunning,
-                        serviceRepository.rssi,
-                        settingsRepository.rssiThreshold
-                    ) {
-                        isServiceRunning, rssi, rssiThreshold -> listOf(isServiceRunning, rssi, rssiThreshold)
-                    }.collect { (isServiceRunning, rssi, rssiThreshold) ->
-                        Log.d(TAG, "RSSI: $rssi, THRESHOLD: $rssiThreshold")
-                        if(isServiceRunning as Boolean && (rssi as Int) < (rssiThreshold as Int)) {
-                            lockDevice()
-                        }
-                    }
-                }
-            }
-        }
-
-        @SuppressLint("MissingPermission")
-        override fun onConnectionStateChange(gatt: BluetoothGatt?, status: Int, newState: Int) {
-            super.onConnectionStateChange(gatt, status, newState)
-            if (newState == BluetoothProfile.STATE_CONNECTED) {
-                Log.d(TAG, "Connected to Gatt Server")
-                serviceScope.launch {
-                    serviceRepository.updateIsKeyLinked(true)
-                }
-                rssiPollerScope.launch {
-                    while (true) {
-                        bluetoothGatt?.readRemoteRssi()
-                        delay(POLL_DELAY)
-                    }
-                }
-            } else if (newState == BluetoothProfile.STATE_DISCONNECTED) {
-                Log.d(TAG, "Disconnected from GATT server")
-                serviceScope.launch {
-                    serviceRepository.updateIsKeyLinked(false)
-                }
-            }
-        }
-    }
+//    TODO: REFACTOR
+//    private val gattCallback = object : BluetoothGattCallback() {
+//        override fun onReadRemoteRssi(gatt: BluetoothGatt?, readRssi: Int, status: Int) {
+//            super.onReadRemoteRssi(gatt, readRssi, status)
+//            if (status == BluetoothGatt.GATT_SUCCESS) {
+//                Log.d(TAG, "Device RSSI: $readRssi dBm")
+//                serviceScope.launch {
+//                    serviceRepository.updateRssi(readRssi)
+//                }
+//                serviceScope.launch {
+//                    combine(
+//                        serviceRepository.isServiceRunning,
+//                        serviceRepository.rssi,
+//                        settingsRepository.rssiThreshold
+//                    ) {
+//                        isServiceRunning, rssi, rssiThreshold -> listOf(isServiceRunning, rssi, rssiThreshold)
+//                    }.collect { (isServiceRunning, rssi, rssiThreshold) ->
+//                        Log.d(TAG, "RSSI: $rssi, THRESHOLD: $rssiThreshold")
+//                        if(isServiceRunning as Boolean && (rssi as Int) < (rssiThreshold as Int)) {
+//                            lockDevice()
+//                        }
+//                    }
+//                }
+//            }
+//        }
+//
+//        @SuppressLint("MissingPermission")
+//        override fun onConnectionStateChange(gatt: BluetoothGatt?, status: Int, newState: Int) {
+//            super.onConnectionStateChange(gatt, status, newState)
+//            if (newState == BluetoothProfile.STATE_CONNECTED) {
+//                Log.d(TAG, "Connected to Gatt Server")
+//                serviceScope.launch {
+//                    serviceRepository.updateIsKeyLinked(true)
+//                }
+//                rssiPollerScope.launch {
+//                    while (true) {
+//                        bluetoothGatt?.readRemoteRssi()
+//                        delay(POLL_DELAY)
+//                    }
+//                }
+//            } else if (newState == BluetoothProfile.STATE_DISCONNECTED) {
+//                Log.d(TAG, "Disconnected from GATT server")
+//                serviceScope.launch {
+//                    serviceRepository.updateIsKeyLinked(false)
+//                }
+//            }
+//        }
+//    }
 
     private fun startForeground() {
         try {

@@ -4,7 +4,6 @@ import android.content.Context
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.intPreferencesKey
-import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import com.example.supersmartkeyapp.util.DEFAULT_GRACE_PERIOD
 import com.example.supersmartkeyapp.util.DEFAULT_POLLING_RATE
@@ -19,17 +18,13 @@ private const val SERVICE_NAME = "service"
 private val Context.dataStore by preferencesDataStore(SERVICE_NAME)
 
 @Singleton
-class ServiceRepository @Inject constructor(@ApplicationContext context: Context) {
+class ServiceRepository @Inject constructor(@ApplicationContext private val context: Context) {
 
     private object Keys {
         val RSSI_THRESHOLD = intPreferencesKey("rssi_threshold")
         val GRACE_PERIOD = intPreferencesKey("grace_period")
         val POLLING_RATE = intPreferencesKey("polling_rate")
         val IS_SERVICE_RUNNING = booleanPreferencesKey("is_service_running")
-        val IS_KEY_LINKED = booleanPreferencesKey("is_key_linked")
-        val DEVICE_ADDRESS = stringPreferencesKey("device_address")
-        val DEVICE_NAME = stringPreferencesKey("device_name")
-        val RSSI = intPreferencesKey("rssi")
     }
 
     private val dataStore = context.dataStore
@@ -83,58 +78,6 @@ class ServiceRepository @Inject constructor(@ApplicationContext context: Context
     suspend fun updateIsServiceRunning(isServiceRunning: Boolean) {
         dataStore.edit { preferences ->
             preferences[Keys.IS_SERVICE_RUNNING] = isServiceRunning
-        }
-    }
-
-    /**
-     * Get the isKeyLinked flow.
-     */
-    val isKeyLinked: Flow<Boolean> = dataStore.data.map { preferences ->
-        preferences[Keys.IS_KEY_LINKED] ?: false
-    }
-
-    suspend fun updateIsKeyLinked(isKeyLinked: Boolean) {
-        dataStore.edit { preferences ->
-            preferences[Keys.IS_KEY_LINKED] = isKeyLinked
-        }
-    }
-
-    /**
-     * Get the deviceAddress flow.
-     */
-    val deviceAddress: Flow<String> = dataStore.data.map { preferences ->
-        preferences[Keys.DEVICE_ADDRESS] ?: ""
-    }
-
-    suspend fun updateDeviceAddress(deviceAddress: String) {
-        dataStore.edit { preferences ->
-            preferences[Keys.DEVICE_ADDRESS] = deviceAddress
-        }
-    }
-
-    /**
-     * Get the deviceName flow.
-     */
-    val deviceName: Flow<String> = dataStore.data.map { preferences ->
-        preferences[Keys.DEVICE_NAME] ?: ""
-    }
-
-    suspend fun updateDeviceName(deviceName: String) {
-        dataStore.edit { preferences ->
-            preferences[Keys.DEVICE_NAME] = deviceName
-        }
-    }
-
-    /**
-     * Get the rssi flow.
-     */
-    val rssi: Flow<Int> = dataStore.data.map { preferences ->
-        preferences[Keys.RSSI] ?: 1
-    }
-
-    suspend fun updateRssi(rssi: Int) {
-        dataStore.edit { preferences ->
-            preferences[Keys.RSSI] = rssi
         }
     }
 }
