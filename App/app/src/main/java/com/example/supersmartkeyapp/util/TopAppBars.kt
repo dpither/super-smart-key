@@ -23,27 +23,21 @@ import com.example.supersmartkeyapp.ui.theme.AppTheme
 
 @Composable
 fun HomeTopAppBar(onSettings: () -> Unit) {
-    CenterAlignedTopAppBar(
-        title = { Text(stringResource(R.string.app_name)) },
-        actions = {
-            IconButton(onClick = onSettings) {
-                Icon(Icons.Rounded.Settings, stringResource(R.string.settings_title))
-            }
-        },
-        modifier = Modifier.fillMaxWidth()
+    CenterAlignedTopAppBar(title = { Text(stringResource(R.string.app_name)) }, actions = {
+        IconButton(onClick = onSettings) {
+            Icon(Icons.Rounded.Settings, stringResource(R.string.settings))
+        }
+    }, modifier = Modifier.fillMaxWidth()
     )
 }
 
 @Composable
 fun SettingsTopAppBar(onBack: () -> Unit) {
-    TopAppBar(
-        title = { Text(stringResource(R.string.settings_title)) },
-        navigationIcon = {
-            IconButton(onClick = onBack) {
-                Icon(Icons.AutoMirrored.Rounded.ArrowBack, stringResource(R.string.menu_back))
-            }
-        },
-        modifier = Modifier.fillMaxWidth()
+    TopAppBar(title = { Text(stringResource(R.string.settings)) }, navigationIcon = {
+        IconButton(onClick = onBack) {
+            Icon(Icons.AutoMirrored.Rounded.ArrowBack, stringResource(R.string.back))
+        }
+    }, modifier = Modifier.fillMaxWidth()
     )
 }
 

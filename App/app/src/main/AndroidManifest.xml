@@ -45,7 +45,7 @@
             </intent-filter>
         </activity>
         <service
-            android:name=".service.SuperSmartKeyService"
+            android:name=".service.KeyService"
             android:exported="false"
             android:foregroundServiceType="connectedDevice" />
         <receiver

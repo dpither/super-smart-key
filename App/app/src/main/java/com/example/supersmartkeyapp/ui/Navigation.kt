@@ -1,5 +1,7 @@
 package com.example.supersmartkeyapp.ui
 
+import androidx.compose.animation.EnterTransition
+import androidx.compose.animation.ExitTransition
 import androidx.compose.runtime.Composable
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -16,7 +18,10 @@ private object Screens {
 fun Navigation() {
     val navController = rememberNavController()
 
-    NavHost(navController = navController, startDestination = Screens.HOME_SCREEN) {
+    NavHost(navController = navController,
+        startDestination = Screens.HOME_SCREEN,
+        enterTransition = { EnterTransition.None },
+        exitTransition = { ExitTransition.None }) {
         composable(route = Screens.HOME_SCREEN) {
             HomeScreen(onSettings = { navController.navigate(Screens.SETTINGS_SCREEN) })
         }

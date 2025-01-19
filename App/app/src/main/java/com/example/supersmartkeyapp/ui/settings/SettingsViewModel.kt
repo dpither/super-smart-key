@@ -2,7 +2,7 @@ package com.example.supersmartkeyapp.ui.settings
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.supersmartkeyapp.data.ServiceRepository
+import com.example.supersmartkeyapp.data.repository.ServiceRepository
 import com.example.supersmartkeyapp.util.DEFAULT_GRACE_PERIOD
 import com.example.supersmartkeyapp.util.DEFAULT_POLLING_RATE
 import com.example.supersmartkeyapp.util.DEFAULT_RSSI_THRESHOLD
@@ -17,12 +17,12 @@ data class SettingsUiState(
     val rssiThreshold: Int = DEFAULT_RSSI_THRESHOLD,
     val gracePeriod: Int = DEFAULT_GRACE_PERIOD,
     val pollingRate: Int = DEFAULT_POLLING_RATE,
-    val isLoading: Boolean = false,
+    val isLoading: Boolean = true,
 )
 
 @HiltViewModel
 class SettingsViewModel @Inject constructor(
-    private val serviceRepository: ServiceRepository,
+    private val settingsRepository: ServiceRepository,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(SettingsUiState())
@@ -38,26 +38,12 @@ class SettingsViewModel @Inject constructor(
         }
 
         viewModelScope.launch {
-            serviceRepository.rssiThreshold.collect { rssiThreshold ->
-                _uiState.update {
-                    it.copy(rssiThreshold = rssiThreshold)
-                }
-            }
-        }
-
-        viewModelScope.launch {
-            serviceRepository.gracePeriod.collect { gracePeriod ->
-                _uiState.update {
-                    it.copy(gracePeriod = gracePeriod)
-                }
-            }
-        }
-
-        viewModelScope.launch {
-            serviceRepository.pollingRate.collect { pollingRate ->
+            settingsRepository.settingsFlow.collect { settings ->
                 _uiState.update {
                     it.copy(
-                        pollingRate = pollingRate,
+                        rssiThreshold = settings.rssiThreshold,
+                        gracePeriod = settings.gracePeriod,
+                        pollingRate = settings.pollingRateSeconds,
                         isLoading = false
                     )
                 }
@@ -73,7 +59,7 @@ class SettingsViewModel @Inject constructor(
 
     fun saveRssiThreshold() {
         viewModelScope.launch {
-            serviceRepository.updateRssiThreshold(uiState.value.rssiThreshold)
+            settingsRepository.updateRssiThreshold(uiState.value.rssiThreshold)
         }
     }
 
@@ -85,7 +71,7 @@ class SettingsViewModel @Inject constructor(
 
     fun saveGracePeriod() {
         viewModelScope.launch {
-            serviceRepository.updateGracePeriod(uiState.value.gracePeriod)
+            settingsRepository.updateGracePeriod(uiState.value.gracePeriod)
         }
     }
 
@@ -97,7 +83,7 @@ class SettingsViewModel @Inject constructor(
 
     fun savePollingRate() {
         viewModelScope.launch {
-            serviceRepository.updatePollingRate(uiState.value.pollingRate)
+            settingsRepository.updatePollingRate(uiState.value.pollingRate)
         }
     }
 }

@@ -1,21 +1,29 @@
 <resources>
     <string name="app_name">Super Smart Key</string>
-    <string name="settings_title">Settings</string>
-    <string name="menu_back">Back</string>
+    <!--Settings screen-->
+    <string name="settings">Settings</string>
+    <string name="rssi_threshold">RSSI Threshold</string>
+    <string name="rssi_threshold_units">dBm</string>
+    <string name="grace_period">Grace Period</string>
+    <string name="grace_period_units">s</string>
+    <string name="polling_rate">Polling Rate</string>
+    <string name="polling_rate_units">s</string>
+    <!--Notification-->
+    <string name="notification_title">Service is running</string>
+    <string name="notification_text">Tap to open</string>
+    <!--Home screen-->
+    <string name="back">Back</string>
     <string name="link_key">Link Key</string>
     <string name="change_key">Change Key</string>
-    <string name="notification_text">Tap to open</string>
-    <string name="notification_title">Service is running</string>
-    <string name="stop_service">Stop</string>
+    <string name="start">Start</string>
+    <string name="stop">Stop</string>
+    <string name="cancel">Cancel</string>
     <string name="no_bluetooth_title">Bluetooth Not Supported</string>
     <string name="no_bluetooth_text">This device does not support Bluetooth</string>
     <string name="key_dialog_title">Available Keys</string>
     <string name="key_dialog_text">Select your key</string>
-    <string name="rssi_threshold_settings_title">RSSI Threshold</string>
-    <string name="rssi_threshold_units">dBm</string>
-    <string name="grace_period_settings_title">Grace Period</string>
-    <string name="grace_period_units">s</string>
-    <string name="polling_rate_settings_title">Polling Rate</string>
-    <string name="polling_rate_units">s</string>
-    <string name="cancel">Cancel</string>
+    <string name="empty_key_dialog_title">No keys found</string>
+    <string name="empty_key_dialog_text">Try connecting a Bluetooth device</string>
+    <string name="address">Address</string>
+    <string name="disconnect">Disconnect</string>
 </resources>

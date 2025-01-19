@@ -1,6 +1,5 @@
 package com.example.supersmartkeyapp.ui.settings
 
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -8,6 +7,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Slider
@@ -49,7 +49,7 @@ fun SettingsScreen(
         modifier = modifier.fillMaxSize(),
         topBar = { SettingsTopAppBar(onBack) },
     ) { paddingValues ->
-        
+
         SettingsContent(
             rssiThreshold = uiState.rssiThreshold,
             onRssiThresholdChange = viewModel::updateRssiThreshold,
@@ -60,6 +60,7 @@ fun SettingsScreen(
             pollingRate = uiState.pollingRate,
             onPollingRateChange = viewModel::updatePollingRate,
             onPollingRateChangeFinished = viewModel::savePollingRate,
+            isLoading = uiState.isLoading,
             modifier = Modifier.padding(paddingValues),
         )
     }
@@ -76,45 +77,51 @@ private fun SettingsContent(
     pollingRate: Int,
     onPollingRateChange: (Int) -> Unit,
     onPollingRateChangeFinished: () -> Unit,
+    isLoading: Boolean,
     modifier: Modifier = Modifier
 ) {
     Column(
-        verticalArrangement = Arrangement.spacedBy(8.dp),
-        modifier = modifier
-            .fillMaxSize()
-            .padding(horizontal = 8.dp)
+        modifier = modifier.fillMaxSize()
     ) {
+        if (isLoading) {
+            LinearProgressIndicator(
+                modifier = Modifier
+                    .width(240.dp)
+                    .align(Alignment.CenterHorizontally)
+            )
+            return
+        }
         SettingsIntSlider(
-            title = stringResource(R.string.rssi_threshold_settings_title),
+            title = stringResource(R.string.rssi_threshold),
             units = stringResource(R.string.rssi_threshold_units),
             value = rssiThreshold,
             onValueChange = onRssiThresholdChange,
             onValueChangeFinished = onRssiThresholdChangeFinished,
             minVal = MIN_RSSI_THRESHOLD,
             maxVal = MAX_RSSI_THRESHOLD,
-            steps = (MAX_RSSI_THRESHOLD - MIN_RSSI_THRESHOLD) - 1
+            steps = (MAX_RSSI_THRESHOLD - MIN_RSSI_THRESHOLD) - 1,
         )
         HorizontalDivider()
         SettingsIntSlider(
-            title = stringResource(R.string.grace_period_settings_title),
+            title = stringResource(R.string.grace_period),
             units = stringResource(R.string.grace_period_units),
             value = gracePeriod,
             onValueChange = onGracePeriodChange,
             onValueChangeFinished = onGracePeriodChangeFinished,
             minVal = MIN_GRACE_PERIOD,
             maxVal = MAX_GRACE_PERIOD,
-            steps = (MAX_GRACE_PERIOD - MIN_GRACE_PERIOD) - 1
+            steps = (MAX_GRACE_PERIOD - MIN_GRACE_PERIOD) - 1,
         )
         HorizontalDivider()
         SettingsIntSlider(
-            title = stringResource(R.string.polling_rate_settings_title),
+            title = stringResource(R.string.polling_rate),
             units = stringResource(R.string.polling_rate_units),
             value = pollingRate,
             onValueChange = onPollingRateChange,
             onValueChangeFinished = onPollingRateChangeFinished,
             minVal = MIN_POLLING_RATE,
             maxVal = MAX_POLLING_RATE,
-            steps = (MAX_POLLING_RATE - MIN_POLLING_RATE) - 1
+            steps = (MAX_POLLING_RATE - MIN_POLLING_RATE) - 1,
         )
     }
 }
@@ -128,13 +135,13 @@ private fun SettingsIntSlider(
     onValueChangeFinished: () -> Unit,
     minVal: Int,
     maxVal: Int,
-    steps: Int,
+    steps: Int
 ) {
     val colors = SliderDefaults.colors(
         activeTickColor = Color.Transparent,
         inactiveTickColor = Color.Transparent,
     )
-    Column {
+    Column(modifier = Modifier.padding(horizontal = 24.dp, vertical = 12.dp)) {
         Text(
             text = title,
             style = MaterialTheme.typography.bodyLarge,
@@ -144,9 +151,7 @@ private fun SettingsIntSlider(
             style = MaterialTheme.typography.bodySmall,
         )
         Box(
-            contentAlignment = Alignment.Center,
-            modifier = Modifier
-                .fillMaxWidth()
+            contentAlignment = Alignment.Center, modifier = Modifier.fillMaxWidth()
         ) {
             Text(
                 "$minVal",
@@ -160,7 +165,7 @@ private fun SettingsIntSlider(
                 valueRange = minVal.toFloat()..maxVal.toFloat(),
                 steps = steps,
                 colors = colors,
-                modifier = Modifier.width(320.dp)
+                modifier = Modifier.width(240.dp)
             )
             Text(
                 "$maxVal",
@@ -180,8 +185,7 @@ fun SettingsContentPreview() {
                 modifier = Modifier.fillMaxSize(),
                 topBar = { SettingsTopAppBar(onBack = {}) },
             ) { paddingValues ->
-                SettingsContent(
-                    rssiThreshold = DEFAULT_RSSI_THRESHOLD,
+                SettingsContent(rssiThreshold = DEFAULT_RSSI_THRESHOLD,
                     onRssiThresholdChange = {},
                     onRssiThresholdChangeFinished = {},
                     gracePeriod = DEFAULT_GRACE_PERIOD,
@@ -190,6 +194,33 @@ fun SettingsContentPreview() {
                     pollingRate = DEFAULT_POLLING_RATE,
                     onPollingRateChange = {},
                     onPollingRateChangeFinished = {},
+                    isLoading = false,
+                    modifier = Modifier.padding(paddingValues)
+                )
+            }
+        }
+    }
+}
+
+@Preview
+@Composable
+fun SettingsContentLoadingPreview() {
+    AppTheme {
+        Surface {
+            Scaffold(
+                modifier = Modifier.fillMaxSize(),
+                topBar = { SettingsTopAppBar(onBack = {}) },
+            ) { paddingValues ->
+                SettingsContent(rssiThreshold = DEFAULT_RSSI_THRESHOLD,
+                    onRssiThresholdChange = {},
+                    onRssiThresholdChangeFinished = {},
+                    gracePeriod = DEFAULT_GRACE_PERIOD,
+                    onGracePeriodChange = {},
+                    onGracePeriodChangeFinished = {},
+                    pollingRate = DEFAULT_POLLING_RATE,
+                    onPollingRateChange = {},
+                    onPollingRateChangeFinished = {},
+                    isLoading = true,
                     modifier = Modifier.padding(paddingValues)
                 )
             }

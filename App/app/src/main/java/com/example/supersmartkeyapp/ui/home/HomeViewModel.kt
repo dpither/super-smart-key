@@ -1,11 +1,11 @@
 package com.example.supersmartkeyapp.ui.home
 
-import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.supersmartkeyapp.data.Key
-import com.example.supersmartkeyapp.data.KeyRepository
-import com.example.supersmartkeyapp.data.ServiceRepository
+import com.example.supersmartkeyapp.data.manager.KeyServiceManager
+import com.example.supersmartkeyapp.data.repository.KeyRepository
+import com.example.supersmartkeyapp.data.repository.ServiceRepository
+import com.example.supersmartkeyapp.data.model.Key
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -24,8 +24,9 @@ data class HomeUiState(
 
 @HiltViewModel
 class HomeViewModel @Inject constructor(
-    private val serviceRepository: ServiceRepository,
-    private val keyRepository: KeyRepository
+    private val settingsRepository: ServiceRepository,
+    private val keyRepository: KeyRepository,
+    private val keyServiceManager: KeyServiceManager
 ) : ViewModel() {
     private val _uiState = MutableStateFlow(HomeUiState())
     val uiState: StateFlow<HomeUiState> = _uiState
@@ -51,7 +52,7 @@ class HomeViewModel @Inject constructor(
         }
 
         viewModelScope.launch {
-            serviceRepository.isServiceRunning.collect { value ->
+            settingsRepository.isServiceRunningFlow.collect { value ->
                 _uiState.update {
                     it.copy(isServiceRunning = value)
                 }
@@ -62,31 +63,50 @@ class HomeViewModel @Inject constructor(
             keyRepository.availableKeys.collect { value ->
                 _uiState.update {
                     it.copy(
-                        availableKeys = value,
-                        isLoading = false
+                        availableKeys = value, isLoading = false
                     )
                 }
             }
         }
     }
 
-    fun updateIsServiceRunning(isServiceRunning: Boolean) {
-//        TODO: Start service/stop service
-        viewModelScope.launch {
-            serviceRepository.updateIsServiceRunning(isServiceRunning)
-        }
+    fun runKeyService() {
+        keyServiceManager.runKeyService()
+    }
+
+    fun pauseKeyService() {
+        keyServiceManager.pauseKeyService()
     }
 
     fun linkKey(key: Key) {
-//        TODO: Init service? or maybe in repository
-        viewModelScope.launch {
-            keyRepository.linkDevice(key.device)
+//        Maybe link by using selected index and available keys
+        if (key.device.address != _uiState.value.key?.device?.address) {
+            pauseKeyService()
+            keyServiceManager.startKeyService()
+            viewModelScope.launch {
+                keyRepository.link(key)
+            }
         }
     }
 
-    fun updateShowDialog(showDialog: Boolean) {
+    fun unlinkKey() {
+        if (_uiState.value.key != null) {
+            keyServiceManager.stopKeyService()
+            viewModelScope.launch {
+                keyRepository.unlink()
+            }
+        }
+    }
+
+    fun openDialog() {
         _uiState.update {
-            it.copy(showDialog = showDialog)
+            it.copy(showDialog = true)
+        }
+    }
+
+    fun closeDialog() {
+        _uiState.update {
+            it.copy(showDialog = false)
         }
     }
 }
