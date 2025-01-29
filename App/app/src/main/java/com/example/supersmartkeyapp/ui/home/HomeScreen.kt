@@ -1,40 +1,31 @@
 package com.example.supersmartkeyapp.ui.home
 
+import android.Manifest
 import android.app.Activity
 import android.app.admin.DevicePolicyManager
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
+import android.os.Build
 import android.util.Log
 import androidx.activity.compose.ManagedActivityResultLauncher
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.ActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Card
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LargeFloatingActionButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
@@ -46,18 +37,21 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.window.Dialog
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.supersmartkeyapp.R
 import com.example.supersmartkeyapp.admin.DeviceAdmin
 import com.example.supersmartkeyapp.data.model.Key
 import com.example.supersmartkeyapp.ui.theme.AppTheme
+import com.example.supersmartkeyapp.util.AvailableKeysDialog
 import com.example.supersmartkeyapp.util.HomeTopAppBar
-import com.example.supersmartkeyapp.util.RequestPermissions
+import com.example.supersmartkeyapp.util.PermissionRationaleDialog
+import com.google.accompanist.permissions.ExperimentalPermissionsApi
+import com.google.accompanist.permissions.rememberMultiplePermissionsState
 
 private const val TAG = "HOME_SCREEN"
 
+@OptIn(ExperimentalPermissionsApi::class)
 @Composable
 fun HomeScreen(
     onSettings: () -> Unit,
@@ -79,28 +73,84 @@ fun HomeScreen(
             Log.d(TAG, "Admin not enabled")
         }
     }
+
+    val bluetoothPermissionState = rememberMultiplePermissionsState(
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            listOf(
+                Manifest.permission.BLUETOOTH_SCAN,
+                Manifest.permission.BLUETOOTH_CONNECT,
+            )
+        } else {
+            listOf(Manifest.permission.ACCESS_FINE_LOCATION)
+        }
+    )
+
+    val bluetoothPermissionTitle = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+        stringResource(R.string.bluetooth_permissions)
+    } else {
+        stringResource(R.string.location_permissions)
+    }
+
+    val bluetoothPermissionRationale = if (bluetoothPermissionState.shouldShowRationale) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            stringResource(R.string.bluetooth_rationale)
+        } else {
+            stringResource(R.string.location_rationale)
+        }
+    } else {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            stringResource(R.string.bluetooth_denied_rationale)
+        } else {
+            stringResource(R.string.location_denied_rationale)
+
+        }
+    }
+
     Scaffold(
         modifier = modifier.fillMaxSize(),
         topBar = { HomeTopAppBar(onSettings) },
         floatingActionButton = {
-            LinkKeyButton(
-                isKeyConnected = uiState.key != null, onClick = viewModel::openDialog
-            )
+            LinkKeyButton(isKeyConnected = uiState.key != null, onClick = {
+                if (bluetoothPermissionState.allPermissionsGranted) {
+                    viewModel.openAvailableKeysDialog()
+                } else {
+                    viewModel.openBluetoothPermissionDialog()
+                }
+            })
         },
     ) { paddingValues ->
 
         HomeContent(
             key = uiState.key,
             isServiceRunning = uiState.isServiceRunning,
-            availableKeys = uiState.availableKeys,
-            onKeySelected = viewModel::linkKey,
             onStart = viewModel::runKeyService,
             onStop = viewModel::pauseKeyService,
-            onDisconnect = viewModel::unlinkKey,
-            showDialog = uiState.showDialog,
-            closeDialog = viewModel::closeDialog,
             modifier = Modifier.padding(paddingValues)
         )
+
+        if (uiState.showAvailableKeysDialog) {
+            AvailableKeysDialog(
+                availableKeys = uiState.availableKeys,
+                currentKey = uiState.key,
+                onKeySelected = viewModel::linkKey,
+                onDismiss = viewModel::closeAvailableKeysDialog,
+                onDisconnect = viewModel::unlinkKey
+            )
+        }
+
+        if (uiState.showBluetoothPermissionDialog) {
+            PermissionRationaleDialog(
+                title = bluetoothPermissionTitle,
+                rationale = bluetoothPermissionRationale,
+                onConfirm = {
+                    bluetoothPermissionState.launchMultiplePermissionRequest()
+                    viewModel.closeBluetoothPermissionDialog()
+                },
+                onDismiss = viewModel::closeBluetoothPermissionDialog
+            )
+        }
+
+//        TODO: Device admin dialog
     }
 
 }
@@ -109,24 +159,10 @@ fun HomeScreen(
 private fun HomeContent(
     key: Key?,
     isServiceRunning: Boolean,
-    availableKeys: List<Key>,
-    onKeySelected: (Key) -> Unit,
     onStart: () -> Unit,
     onStop: () -> Unit,
-    onDisconnect: () -> Unit,
-    showDialog: Boolean,
-    closeDialog: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    if (showDialog) {
-        AvailableKeysDialog(
-            availableKeys = availableKeys,
-            currentKey = key,
-            onKeySelected = onKeySelected,
-            onDismiss = closeDialog,
-            onDisconnect = onDisconnect
-        )
-    }
     Box(
         modifier = modifier
             .fillMaxSize()
@@ -161,8 +197,6 @@ private fun HomeContent(
 private fun LinkKeyButton(
     isKeyConnected: Boolean, onClick: () -> Unit
 ) {
-//    TODO: Refactor permissions
-    RequestPermissions()
     LargeFloatingActionButton(
         onClick = onClick
     ) {
@@ -172,7 +206,6 @@ private fun LinkKeyButton(
             } else {
                 ImageVector.vectorResource(R.drawable.link)
             },
-//           TODO: Add other content descriptions to other components?
             contentDescription = if (isKeyConnected) {
                 stringResource(R.string.change_key)
             } else {
@@ -249,130 +282,6 @@ private fun StatusText(
     }
 }
 
-@Composable
-private fun AvailableKeysDialog(
-    availableKeys: List<Key>,
-    currentKey: Key?,
-    onKeySelected: (Key) -> Unit,
-    onDismiss: () -> Unit,
-    onDisconnect: () -> Unit
-) {
-    val scrollState = rememberScrollState()
-
-    Dialog(
-        onDismissRequest = onDismiss
-    ) {
-        Card(
-            modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(16.dp),
-        ) {
-            Column {
-                Column(
-                    modifier = Modifier
-                        .padding(top = 24.dp, bottom = 16.dp)
-                        .padding(horizontal = 24.dp)
-                ) {
-                    Text(
-                        text = stringResource(R.string.key_dialog_title),
-                        style = MaterialTheme.typography.titleLarge
-                    )
-                    Text(
-                        text = stringResource(R.string.key_dialog_text),
-                    )
-                }
-                HorizontalDivider()
-                Column {
-                    Column(
-                        verticalArrangement = if (availableKeys.isEmpty()) {
-                            Arrangement.Center
-                        } else {
-                            Arrangement.Top
-                        },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(240.dp)
-                            .verticalScroll(scrollState)
-                    ) {
-                        availableKeys.forEach { key ->
-                            KeyRow(name = key.name,
-                                address = key.device.address,
-                                selected = key.device.address == currentKey?.device?.address,
-                                onClick = {
-                                    onKeySelected(key)
-                                    onDismiss()
-                                })
-                        }
-                        if (availableKeys.isEmpty()) {
-                            Text(
-                                text = stringResource(R.string.empty_key_dialog_title),
-                                style = MaterialTheme.typography.bodyLarge,
-                                modifier = Modifier.align(Alignment.CenterHorizontally)
-                            )
-                            Text(
-                                text = stringResource(R.string.empty_key_dialog_text),
-                                style = MaterialTheme.typography.bodySmall,
-                                modifier = Modifier.align(Alignment.CenterHorizontally)
-                            )
-                        }
-                    }
-                }
-                HorizontalDivider()
-                Row(
-                    horizontalArrangement = Arrangement.Center,
-                    modifier = Modifier
-                        .padding(top = 16.dp, bottom = 24.dp)
-                        .padding(horizontal = 24.dp)
-                        .align(Alignment.End)
-                ) {
-                    TextButton(
-                        onClick = onDismiss,
-                    ) {
-                        Text(text = stringResource(R.string.cancel))
-                    }
-                    TextButton(enabled = currentKey != null, onClick = {
-                        onDisconnect()
-                        onDismiss()
-                    }) {
-                        Text(text = stringResource(R.string.disconnect))
-                    }
-                }
-
-            }
-        }
-    }
-}
-
-@Composable
-private fun KeyRow(
-    name: String,
-    address: String,
-    selected: Boolean,
-    onClick: () -> Unit,
-) {
-    Row(
-        verticalAlignment = Alignment.CenterVertically,
-        modifier = Modifier
-            .clickable(onClick = onClick)
-            .fillMaxWidth()
-            .padding(horizontal = 24.dp, vertical = 8.dp)
-    ) {
-        RadioButton(
-            selected = selected,
-            onClick = null,
-        )
-        Column(modifier = Modifier.padding(start = 16.dp)) {
-            Text(
-                text = name,
-                style = MaterialTheme.typography.bodyLarge,
-            )
-            Text(
-                text = stringResource(R.string.address) + ": $address",
-                style = MaterialTheme.typography.bodySmall,
-            )
-        }
-    }
-}
-
 private fun requestDeviceAdmin(
     context: Context, deviceAdminLauncher: ManagedActivityResultLauncher<Intent, ActivityResult>
 ) {
@@ -388,7 +297,7 @@ private fun requestDeviceAdmin(
 
 @Preview
 @Composable
-fun HomeContentPreview() {
+private fun HomeContentPreview() {
     AppTheme {
         Scaffold(
             modifier = Modifier.fillMaxSize(),
@@ -397,37 +306,13 @@ fun HomeContentPreview() {
                 LinkKeyButton(isKeyConnected = false, onClick = {})
             },
         ) { paddingValues ->
-            HomeContent(key = null,
-                availableKeys = emptyList(),
+            HomeContent(
+                key = null,
                 isServiceRunning = false,
                 onStart = {},
                 onStop = {},
-                closeDialog = {},
-                onKeySelected = {},
-                showDialog = false,
-                onDisconnect = {},
                 modifier = Modifier.padding(paddingValues)
             )
         }
-    }
-}
-
-@Preview
-@Composable
-fun AvailableKeysDialogPreview() {
-    AppTheme {
-        AvailableKeysDialog(availableKeys = emptyList(),
-            currentKey = null,
-            onDismiss = {},
-            onKeySelected = {},
-            onDisconnect = {})
-    }
-}
-
-@Preview
-@Composable
-fun KeyRowPreview() {
-    AppTheme {
-        KeyRow(name = "Smart Tag2", address = "00:11:22:AA:BB:CC", selected = true, onClick = {})
     }
 }

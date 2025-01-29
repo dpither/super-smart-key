@@ -26,4 +26,12 @@
     <string name="empty_key_dialog_text">Try connecting a Bluetooth device</string>
     <string name="address">Address</string>
     <string name="disconnect">Disconnect</string>
+    <string name="ok">OK</string>
+    <!--Permissions-->
+    <string name="location_permissions">Location\nPermissions</string>
+    <string name="location_rationale">Super Smart Key requires location permissions to communicate with connected Bluetooth devices and use them as keys.</string>
+    <string name="location_denied_rationale">Super Smart Key requires location permissions to communicate with connected Bluetooth devices and use them as keys. This can be enabled in app info.</string>
+    <string name="bluetooth_permissions">Bluetooth\nPermissions</string>
+    <string name="bluetooth_rationale">Super Smart Key requires Bluetooth permissions to communicate with connected Bluetooth devices and use them as keys.</string>
+    <string name="bluetooth_denied_rationale">Super Smart Key requires Bluetooth permissions to communicate with connected Bluetooth devices and use them as keys. This can be enabled in app info.</string>
 </resources>

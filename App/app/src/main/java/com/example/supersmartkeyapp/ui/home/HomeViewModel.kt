@@ -17,7 +17,8 @@ data class HomeUiState(
     val isServiceRunning: Boolean = false,
     val key: Key? = null,
     val rssi: Int? = null,
-    val showDialog: Boolean = false,
+    val showAvailableKeysDialog: Boolean = false,
+    val showBluetoothPermissionDialog: Boolean = false,
     val availableKeys: List<Key> = emptyList(),
     val isLoading: Boolean = false,
 )
@@ -32,9 +33,6 @@ class HomeViewModel @Inject constructor(
     val uiState: StateFlow<HomeUiState> = _uiState
 
     init {
-        viewModelScope.launch {
-            keyRepository.refreshAvailableKeys()
-        }
         loadUiState()
     }
 
@@ -98,15 +96,28 @@ class HomeViewModel @Inject constructor(
         }
     }
 
-    fun openDialog() {
+    fun openAvailableKeysDialog() {
+        keyRepository.refreshAvailableKeys()
         _uiState.update {
-            it.copy(showDialog = true)
+            it.copy(showAvailableKeysDialog = true)
         }
     }
 
-    fun closeDialog() {
+    fun closeAvailableKeysDialog() {
         _uiState.update {
-            it.copy(showDialog = false)
+            it.copy(showAvailableKeysDialog = false)
+        }
+    }
+
+    fun openBluetoothPermissionDialog() {
+        _uiState.update {
+            it.copy(showBluetoothPermissionDialog = true)
+        }
+    }
+
+    fun closeBluetoothPermissionDialog() {
+        _uiState.update {
+            it.copy(showBluetoothPermissionDialog = false)
         }
     }
 }
