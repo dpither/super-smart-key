@@ -1,16 +1,13 @@
 package com.example.supersmartkeyapp.ui.home
 
 import android.Manifest
-import android.app.Activity
 import android.app.admin.DevicePolicyManager
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.os.Build
 import android.util.Log
-import androidx.activity.compose.ManagedActivityResultLauncher
 import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.ActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -59,20 +56,8 @@ fun HomeScreen(
     viewModel: HomeViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
-//    TODO: Move device admin perms
-    val context = LocalContext.current
 
-    val deviceAdminLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.StartActivityForResult()
-    ) { result ->
-        if (result.resultCode == Activity.RESULT_OK) {
-            // Admin enabled
-            Log.d(TAG, "Admin enabled")
-        } else {
-            // Admin not enabled
-            Log.d(TAG, "Admin not enabled")
-        }
-    }
+    val context = LocalContext.current
 
     val bluetoothPermissionState = rememberMultiplePermissionsState(
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
@@ -106,6 +91,56 @@ fun HomeScreen(
         }
     }
 
+    if (uiState.showBluetoothPermissionDialog) {
+        PermissionRationaleDialog(
+            title = bluetoothPermissionTitle,
+            rationale = bluetoothPermissionRationale,
+            onConfirm = {
+                bluetoothPermissionState.launchMultiplePermissionRequest()
+                viewModel.closeBluetoothPermissionDialog()
+            },
+            onDismiss = viewModel::closeBluetoothPermissionDialog
+        )
+    }
+
+    val devicePolicyManager =
+        context.getSystemService(Context.DEVICE_POLICY_SERVICE) as DevicePolicyManager
+
+    val deviceAdminIntent = Intent(DevicePolicyManager.ACTION_ADD_DEVICE_ADMIN).apply {
+        putExtra(
+            DevicePolicyManager.EXTRA_DEVICE_ADMIN, ComponentName(context, DeviceAdmin::class.java)
+        )
+        putExtra(
+            DevicePolicyManager.EXTRA_ADD_EXPLANATION,
+            stringResource(R.string.device_admin_rationale)
+        )
+    }
+
+    val deviceAdminLauncher =
+        rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) {}
+
+    if (uiState.showDeviceAdminDialog) {
+        PermissionRationaleDialog(
+            title = stringResource(R.string.device_admin),
+            rationale = stringResource(R.string.device_admin_rationale),
+            onConfirm = {
+                deviceAdminLauncher.launch(deviceAdminIntent)
+                viewModel.closeDeviceAdminDialog()
+            },
+            onDismiss = viewModel::closeDeviceAdminDialog
+        )
+    }
+
+    if (uiState.showAvailableKeysDialog) {
+        AvailableKeysDialog(
+            availableKeys = uiState.availableKeys,
+            currentKey = uiState.key,
+            onKeySelected = viewModel::linkKey,
+            onDismiss = viewModel::closeAvailableKeysDialog,
+            onDisconnect = viewModel::unlinkKey
+        )
+    }
+
     Scaffold(
         modifier = modifier.fillMaxSize(),
         topBar = { HomeTopAppBar(onSettings) },
@@ -121,38 +156,21 @@ fun HomeScreen(
     ) { paddingValues ->
 
         HomeContent(
-            key = uiState.key,
-            isServiceRunning = uiState.isServiceRunning,
-            onStart = viewModel::runKeyService,
-            onStop = viewModel::pauseKeyService,
-            modifier = Modifier.padding(paddingValues)
+            key = uiState.key, isServiceRunning = uiState.isServiceRunning,
+            onStart = {
+                if (devicePolicyManager.isAdminActive(
+                        ComponentName(
+                            context, DeviceAdmin::class.java
+                        )
+                    )
+                ) {
+                    viewModel.runKeyService()
+                } else {
+                    viewModel.openDeviceAdminDialog()
+                }
+            }, onStop = viewModel::pauseKeyService, modifier = Modifier.padding(paddingValues)
         )
-
-        if (uiState.showAvailableKeysDialog) {
-            AvailableKeysDialog(
-                availableKeys = uiState.availableKeys,
-                currentKey = uiState.key,
-                onKeySelected = viewModel::linkKey,
-                onDismiss = viewModel::closeAvailableKeysDialog,
-                onDisconnect = viewModel::unlinkKey
-            )
-        }
-
-        if (uiState.showBluetoothPermissionDialog) {
-            PermissionRationaleDialog(
-                title = bluetoothPermissionTitle,
-                rationale = bluetoothPermissionRationale,
-                onConfirm = {
-                    bluetoothPermissionState.launchMultiplePermissionRequest()
-                    viewModel.closeBluetoothPermissionDialog()
-                },
-                onDismiss = viewModel::closeBluetoothPermissionDialog
-            )
-        }
-
-//        TODO: Device admin dialog
     }
-
 }
 
 @Composable
@@ -280,19 +298,6 @@ private fun StatusText(
             Text("")
         }
     }
-}
-
-private fun requestDeviceAdmin(
-    context: Context, deviceAdminLauncher: ManagedActivityResultLauncher<Intent, ActivityResult>
-) {
-    val componentName = ComponentName(context, DeviceAdmin::class.java)
-    val intent = Intent(DevicePolicyManager.ACTION_ADD_DEVICE_ADMIN).apply {
-        putExtra(DevicePolicyManager.EXTRA_DEVICE_ADMIN, componentName)
-        putExtra(
-            DevicePolicyManager.EXTRA_ADD_EXPLANATION, "Activate to enable locking"
-        )
-    }
-    deviceAdminLauncher.launch(intent)
 }
 
 @Preview

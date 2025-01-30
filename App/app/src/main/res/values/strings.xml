@@ -28,6 +28,8 @@
     <string name="disconnect">Disconnect</string>
     <string name="ok">OK</string>
     <!--Permissions-->
+    <string name="device_admin">Device\nAdmin</string>
+    <string name="device_admin_rationale">Super Smart Key requires device admin to lock your device when the selected key is outside the set range.</string>
     <string name="location_permissions">Location\nPermissions</string>
     <string name="location_rationale">Super Smart Key requires location permissions to communicate with connected Bluetooth devices and use them as keys.</string>
     <string name="location_denied_rationale">Super Smart Key requires location permissions to communicate with connected Bluetooth devices and use them as keys. This can be enabled in app info.</string>
