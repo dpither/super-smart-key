@@ -6,7 +6,6 @@ import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.os.Build
-import android.util.Log
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Box
@@ -135,9 +134,11 @@ fun HomeScreen(
         AvailableKeysDialog(
             availableKeys = uiState.availableKeys,
             currentKey = uiState.key,
-            onKeySelected = viewModel::linkKey,
+            selectedKey = uiState.selectedKey,
+            onKeySelected = viewModel::selectKey,
             onDismiss = viewModel::closeAvailableKeysDialog,
-            onDisconnect = viewModel::unlinkKey
+            onConnect = viewModel::connectKey,
+            onDisconnect = viewModel::disconnectKey
         )
     }
 

@@ -35,20 +35,20 @@ class KeyServiceManager @Inject constructor(@ApplicationContext private val cont
         if (!bound) {
             Log.d(TAG, "Binding Service")
             context.bindService(intent, connection, Context.BIND_AUTO_CREATE)
-        }
-        context.startService(intent)
-    }
-
-    fun runKeyService() {
-        if (bound) {
-            keyService.runService()
+            context.startService(intent)
         }
     }
 
-
-    fun pauseKeyService() {
+    fun startLockService() {
         if (bound) {
-            keyService.pauseService()
+            keyService.startLockService()
+        }
+    }
+
+
+    fun stopLockService() {
+        if (bound) {
+            keyService.stopLockService()
         }
     }
 
@@ -57,8 +57,8 @@ class KeyServiceManager @Inject constructor(@ApplicationContext private val cont
             Log.d(TAG, "Unbinding Service")
             context.unbindService(connection)
             bound = false
+            val intent = Intent(context, KeyService::class.java)
+            context.stopService(intent)
         }
-        val intent = Intent(context, KeyService::class.java)
-        context.stopService(intent)
     }
 }

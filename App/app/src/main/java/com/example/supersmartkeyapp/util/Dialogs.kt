@@ -4,9 +4,11 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -37,13 +39,12 @@ fun PermissionRationaleDialog(
     Dialog(onDismissRequest = onDismiss) {
         Card(
             modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(24.dp),
+            shape = RoundedCornerShape(16.dp),
         ) {
             Column {
                 Column(
                     modifier = Modifier
-                        .padding(top = 24.dp, bottom = 16.dp)
-                        .padding(horizontal = 24.dp)
+                        .padding(16.dp)
                 ) {
                     Text(
                         text = title,
@@ -56,22 +57,23 @@ fun PermissionRationaleDialog(
                     style = MaterialTheme.typography.bodyLarge,
                     modifier = Modifier
                         .align(Alignment.CenterHorizontally)
-                        .padding(24.dp)
+                        .padding(16.dp)
                 )
                 HorizontalDivider()
                 Row(
                     modifier = Modifier
-                        .padding(top = 16.dp, bottom = 24.dp)
-                        .padding(horizontal = 24.dp)
-                        .align(Alignment.End)
+                        .padding(16.dp)
                 ) {
                     TextButton(
-                        onClick = onDismiss
+                        onClick = onDismiss,
+                        modifier = Modifier.weight(1f)
                     ) {
                         Text(text = stringResource(R.string.cancel))
                     }
+                    Spacer(modifier = Modifier.width(16.dp))
                     TextButton(
-                        onClick = onConfirm
+                        onClick = onConfirm,
+                        modifier = Modifier.weight(1f)
                     ) {
                         Text(text = stringResource(R.string.ok))
                     }
@@ -85,22 +87,23 @@ fun PermissionRationaleDialog(
 fun AvailableKeysDialog(
     availableKeys: List<Key>,
     currentKey: Key?,
+    selectedKey: Key?,
     onKeySelected: (Key) -> Unit,
-    onDismiss: () -> Unit,
-    onDisconnect: () -> Unit
+    onConnect: () -> Unit,
+    onDisconnect: () -> Unit,
+    onDismiss: () -> Unit
 ) {
     val scrollState = rememberScrollState()
 
     Dialog(onDismissRequest = onDismiss) {
         Card(
             modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(24.dp),
+            shape = RoundedCornerShape(16.dp),
         ) {
             Column {
                 Column(
                     modifier = Modifier
-                        .padding(top = 24.dp, bottom = 16.dp)
-                        .padding(horizontal = 24.dp)
+                        .padding(16.dp)
                 ) {
                     Text(
                         text = stringResource(R.string.key_dialog_title),
@@ -126,10 +129,9 @@ fun AvailableKeysDialog(
                         availableKeys.forEach { key ->
                             KeyRow(name = key.name,
                                 address = key.device.address,
-                                selected = key.device.address == currentKey?.device?.address,
+                                selected = key.device.address == selectedKey?.device?.address,
                                 onClick = {
                                     onKeySelected(key)
-                                    onDismiss()
                                 })
                         }
                         if (availableKeys.isEmpty()) {
@@ -149,21 +151,31 @@ fun AvailableKeysDialog(
                 HorizontalDivider()
                 Row(
                     modifier = Modifier
-                        .padding(top = 16.dp, bottom = 24.dp)
-                        .padding(horizontal = 24.dp)
-                        .align(Alignment.End)
+                        .padding(16.dp)
                 ) {
                     TextButton(
                         onClick = onDismiss,
+                        modifier = Modifier.weight(1f)
                     ) {
                         Text(text = stringResource(R.string.cancel))
                     }
-                    TextButton(enabled = currentKey != null, onClick = {
-                        onDisconnect()
-                        onDismiss()
-                    }) {
-                        Text(text = stringResource(R.string.disconnect))
+                    Spacer(modifier = Modifier.width(16.dp))
+                    if (selectedKey == null || selectedKey.device.address != currentKey?.device?.address) {
+                        TextButton(enabled = selectedKey != null, onClick = {
+                            onConnect()
+                            onDismiss()
+                        }, modifier = Modifier.weight(1f)) {
+                            Text(text = stringResource(R.string.connect))
+                        }
+                    } else {
+                        TextButton(enabled = selectedKey != null, onClick = {
+                            onDisconnect()
+                            onDismiss()
+                        }, modifier = Modifier.weight(1f)) {
+                            Text(text = stringResource(R.string.disconnect))
+                        }
                     }
+
                 }
 
             }
@@ -183,7 +195,7 @@ private fun KeyRow(
         modifier = Modifier
             .clickable(onClick = onClick)
             .fillMaxWidth()
-            .padding(horizontal = 24.dp, vertical = 8.dp)
+            .padding(horizontal = 16.dp, vertical = 8.dp)
     ) {
         RadioButton(
             selected = selected,
@@ -218,9 +230,11 @@ private fun PermissionRationaleDialogPreview() {
 private fun AvailableKeysDialogPreview() {
     AppTheme {
         AvailableKeysDialog(availableKeys = emptyList(),
+            selectedKey = null,
             currentKey = null,
             onDismiss = {},
             onKeySelected = {},
+            onConnect = {},
             onDisconnect = {})
     }
 }

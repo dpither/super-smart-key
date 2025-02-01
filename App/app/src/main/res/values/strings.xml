@@ -17,7 +17,6 @@
     <string name="change_key">Change Key</string>
     <string name="start">Start</string>
     <string name="stop">Stop</string>
-    <string name="cancel">Cancel</string>
     <string name="no_bluetooth_title">Bluetooth Not Supported</string>
     <string name="no_bluetooth_text">This device does not support Bluetooth</string>
     <string name="key_dialog_title">Available Keys</string>
@@ -25,8 +24,10 @@
     <string name="empty_key_dialog_title">No keys found</string>
     <string name="empty_key_dialog_text">Try connecting a Bluetooth device</string>
     <string name="address">Address</string>
+    <string name="connect">Connect</string>
     <string name="disconnect">Disconnect</string>
     <string name="ok">OK</string>
+    <string name="cancel">Cancel</string>
     <!--Permissions-->
     <string name="device_admin">Device\nAdmin</string>
     <string name="device_admin_rationale">Super Smart Key requires device admin to lock your device when the selected key is outside the set range.</string>

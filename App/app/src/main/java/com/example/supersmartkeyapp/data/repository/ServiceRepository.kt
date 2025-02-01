@@ -30,7 +30,7 @@ class ServiceRepository @Inject constructor(@ApplicationContext private val cont
         val RSSI_THRESHOLD = intPreferencesKey("rssi_threshold")
         val GRACE_PERIOD = intPreferencesKey("grace_period")
         val POLLING_RATE = intPreferencesKey("polling_rate")
-        val IS_SERVICE_RUNNING = booleanPreferencesKey("is_service_running")
+        val IS_LOCK_SERVICE_RUNNING = booleanPreferencesKey("is_lock_service_running")
     }
 
     private val dataStore: DataStore<Preferences> = context.dataStore
@@ -69,13 +69,13 @@ class ServiceRepository @Inject constructor(@ApplicationContext private val cont
     /**
      * Get the isServiceRunning flow.
      */
-    val isServiceRunningFlow: Flow<Boolean> = dataStore.data.map { preferences ->
-        preferences[PreferencesKeys.IS_SERVICE_RUNNING] ?: false
+    val isLockServiceRunningFlow: Flow<Boolean> = dataStore.data.map { preferences ->
+        preferences[PreferencesKeys.IS_LOCK_SERVICE_RUNNING] ?: false
     }
 
-    suspend fun updateIsServiceRunning(isServiceRunning: Boolean) {
+    suspend fun updateIsLockServiceRunning(isServiceRunning: Boolean) {
         dataStore.edit { preferences ->
-            preferences[PreferencesKeys.IS_SERVICE_RUNNING] = isServiceRunning
+            preferences[PreferencesKeys.IS_LOCK_SERVICE_RUNNING] = isServiceRunning
         }
     }
 

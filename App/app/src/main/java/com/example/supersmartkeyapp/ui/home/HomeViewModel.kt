@@ -16,6 +16,7 @@ import javax.inject.Inject
 data class HomeUiState(
     val isServiceRunning: Boolean = false,
     val key: Key? = null,
+    val selectedKey: Key? = null,
     val rssi: Int? = null,
     val availableKeys: List<Key> = emptyList(),
     val showAvailableKeysDialog: Boolean = false,
@@ -43,17 +44,17 @@ class HomeViewModel @Inject constructor(
         }
 
         viewModelScope.launch {
-            keyRepository.key.collect { value ->
+            settingsRepository.isLockServiceRunningFlow.collect { value ->
                 _uiState.update {
-                    it.copy(key = value)
+                    it.copy(isServiceRunning = value)
                 }
             }
         }
 
         viewModelScope.launch {
-            settingsRepository.isServiceRunningFlow.collect { value ->
+            keyRepository.key.collect { value ->
                 _uiState.update {
-                    it.copy(isServiceRunning = value)
+                    it.copy(key = value)
                 }
             }
         }
@@ -70,37 +71,40 @@ class HomeViewModel @Inject constructor(
     }
 
     fun runKeyService() {
-        keyServiceManager.runKeyService()
+        keyServiceManager.startLockService()
     }
 
     fun pauseKeyService() {
-        keyServiceManager.pauseKeyService()
+        keyServiceManager.stopLockService()
     }
 
-    fun linkKey(key: Key) {
-//        Maybe link by using selected index and available keys
-        if (key.device.address != _uiState.value.key?.device?.address) {
-            pauseKeyService()
+    fun selectKey(key: Key) {
+        _uiState.update {
+            it.copy(selectedKey = key)
+        }
+    }
+
+    fun connectKey() {
+        if (_uiState.value.selectedKey?.device?.address != _uiState.value.key?.device?.address) {
+            keyServiceManager.stopLockService()
             keyServiceManager.startKeyService()
             viewModelScope.launch {
-                keyRepository.link(key)
+                _uiState.value.selectedKey?.let { keyRepository.connectKey(it) }
             }
         }
     }
 
-    fun unlinkKey() {
-        if (_uiState.value.key != null) {
-            keyServiceManager.stopKeyService()
-            viewModelScope.launch {
-                keyRepository.unlink()
-            }
+    fun disconnectKey() {
+        keyServiceManager.stopKeyService()
+        viewModelScope.launch {
+            keyRepository.disconnectKey()
         }
     }
 
     fun openAvailableKeysDialog() {
         keyRepository.refreshAvailableKeys()
         _uiState.update {
-            it.copy(showAvailableKeysDialog = true)
+            it.copy(showAvailableKeysDialog = true, selectedKey = _uiState.value.key)
         }
     }
 

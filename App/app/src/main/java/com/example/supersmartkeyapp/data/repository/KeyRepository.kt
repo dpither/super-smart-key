@@ -1,7 +1,6 @@
 package com.example.supersmartkeyapp.data.repository
 
 import android.annotation.SuppressLint
-import android.bluetooth.BluetoothDevice
 import android.bluetooth.BluetoothGatt
 import android.bluetooth.BluetoothGattCallback
 import android.bluetooth.BluetoothManager
@@ -22,6 +21,7 @@ private const val NULL_DEVICE_NAME = "Unnamed Device"
 @SuppressLint("MissingPermission")
 @Singleton
 class KeyRepository @Inject constructor(@ApplicationContext private val context: Context) {
+    //    TODO: Add isConnected boolean,implement connection button in Homeview, add selection in homevm can set key here in vm, link will update isconnected
     private val _key = MutableStateFlow<Key?>(null)
     val key: Flow<Key?> = _key
 
@@ -45,11 +45,10 @@ class KeyRepository @Inject constructor(@ApplicationContext private val context:
         _availableKeys.update { newList }
     }
 
-    fun link(key: Key) {
+    fun connectKey(key: Key) {
         if (_key.value != null) {
-            unlink()
+            disconnectKey()
         }
-        val device: BluetoothDevice = key.device
         val bluetoothGattCallback = object : BluetoothGattCallback() {
             override fun onConnectionStateChange(gatt: BluetoothGatt, status: Int, newState: Int) {
                 super.onConnectionStateChange(gatt, status, newState)
@@ -60,8 +59,8 @@ class KeyRepository @Inject constructor(@ApplicationContext private val context:
                             bluetoothGatt = gatt
                             _key.update {
                                 Key(
-                                    name = device.name ?: NULL_DEVICE_NAME,
-                                    device = device,
+                                    name = gatt.device.name ?: NULL_DEVICE_NAME,
+                                    device = gatt.device,
                                     rssi = null
                                 )
                             }
@@ -88,11 +87,11 @@ class KeyRepository @Inject constructor(@ApplicationContext private val context:
                 }
             }
         }
-//        TODO: Figure out if i should autoreconnect
-        device.connectGatt(context, false, bluetoothGattCallback)
+//        TODO: Figure out if i should autoreconnect (probably)
+        key.device.connectGatt(context, false, bluetoothGattCallback)
     }
 
-    fun unlink() {
+    fun disconnectKey() {
         bluetoothGatt?.close()
         bluetoothGatt = null
         _key.update { null }

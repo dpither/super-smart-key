@@ -20,7 +20,6 @@ import androidx.core.app.ServiceCompat
 import com.example.supersmartkeyapp.R
 import com.example.supersmartkeyapp.SuperSmartKeyActivity
 import com.example.supersmartkeyapp.admin.DeviceAdmin
-import com.example.supersmartkeyapp.data.model.Key
 import com.example.supersmartkeyapp.data.model.Settings
 import com.example.supersmartkeyapp.data.repository.KeyRepository
 import com.example.supersmartkeyapp.data.repository.ServiceRepository
@@ -38,7 +37,7 @@ import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 private const val TAG = "KEY_SERVICE"
-private const val ACTION_PAUSE = "PAUSE_KEY_SERVICE"
+private const val ACTION_STOP_LOCK_SERVICE = "STOP_LOCK_SERVICE"
 private const val CHANNEL_ID = "SuperSmartKeyChannelId"
 private const val CHANNEL_NAME = "SuperSmartKeyChannel"
 private const val SERVICE_ID = 426
@@ -60,8 +59,7 @@ class KeyService : Service() {
         gracePeriod = DEFAULT_GRACE_PERIOD,
         pollingRateSeconds = DEFAULT_POLLING_RATE
     )
-    private var isServiceRunning = false
-    private var key: Key? = null
+    private var isLockServiceRunning = false
 
 
     inner class KeyBinder : Binder() {
@@ -72,29 +70,29 @@ class KeyService : Service() {
         return binder
     }
 
+//    TODO: Figure out stopping service after noti stop when app is closed
     override fun onStartCommand(intent: Intent, flags: Int, startId: Int): Int {
-        if (intent.action == ACTION_PAUSE) {
-            pauseService()
-        } else if (!isServiceRunning) {
+        if (intent.action == ACTION_STOP_LOCK_SERVICE) {
+            stopLockService()
+        } else {
             collectScope.launch {
                 settingsRepository.settingsFlow.collect { value ->
                     settings = value
                 }
             }
             collectScope.launch {
-                settingsRepository.isServiceRunningFlow.collect { value ->
-                    isServiceRunning = value
+                settingsRepository.isLockServiceRunningFlow.collect { value ->
+                    isLockServiceRunning = value
                 }
             }
             collectScope.launch {
                 keyRepository.key.collect { value ->
                     Log.d(TAG, "RSSI: ${value?.rssi}")
-                    if (value?.rssi != null && isServiceRunning) {
+                    if (value?.rssi != null && isLockServiceRunning) {
                         if (value.rssi < settings.rssiThreshold) {
                             Log.d(TAG, "Locking device")
                         }
                     }
-                    key = value
                 }
             }
             startRssiPolling()
@@ -112,27 +110,26 @@ class KeyService : Service() {
 
         stopRssiPolling()
 
-        if (isServiceRunning) {
+        if (isLockServiceRunning) {
             updateScope.launch {
-                settingsRepository.updateIsServiceRunning(false)
+                settingsRepository.updateIsLockServiceRunning(false)
             }
         }
         collectScope.cancel()
         Log.d(TAG, "Key service destroyed")
     }
 
-    fun runService() {
-        updateScope.launch {
-            settingsRepository.updateIsServiceRunning(true)
-        }
+    fun startLockService() {
         startForeground()
     }
 
-    fun pauseService() {
-        updateScope.launch {
-            settingsRepository.updateIsServiceRunning(false)
+    fun stopLockService() {
+        if (isLockServiceRunning) {
+            stopForeground(STOP_FOREGROUND_REMOVE)
+            updateScope.launch {
+                settingsRepository.updateIsLockServiceRunning(false)
+            }
         }
-        stopForeground(STOP_FOREGROUND_REMOVE)
     }
 
     private fun startForeground() {
@@ -149,13 +146,13 @@ class KeyService : Service() {
                     this, SERVICE_ID, createNotification(), 0
                 )
             }
+            updateScope.launch {
+                settingsRepository.updateIsLockServiceRunning(true)
+            }
         } catch (e: Exception) {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && e is ForegroundServiceStartNotAllowedException) {
                 Log.e(TAG, e.toString())
             }
-        }
-        updateScope.launch {
-            settingsRepository.updateIsServiceRunning(true)
         }
     }
 
@@ -166,7 +163,7 @@ class KeyService : Service() {
         notificationManager.createNotificationChannel(channel)
 
         val stopIntent = Intent(this, KeyService::class.java).apply {
-            action = ACTION_PAUSE
+            action = ACTION_STOP_LOCK_SERVICE
         }
         val stopPendingIntent =
             PendingIntent.getService(this, 0, stopIntent, PendingIntent.FLAG_IMMUTABLE)
@@ -205,7 +202,7 @@ class KeyService : Service() {
 
     private fun stopRssiPolling() {
         rssiPollingJob?.cancel()
-        keyRepository.unlink()
+        keyRepository.disconnectKey()
     }
 
 //    TODO: Move to admin maybe?
