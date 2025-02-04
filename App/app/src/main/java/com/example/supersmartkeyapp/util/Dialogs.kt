@@ -128,8 +128,8 @@ fun AvailableKeysDialog(
                     ) {
                         availableKeys.forEach { key ->
                             KeyRow(name = key.name,
-                                address = key.device.address,
-                                selected = key.device.address == selectedKey?.device?.address,
+                                address = key.address,
+                                selected = key.address == selectedKey?.address,
                                 onClick = {
                                     onKeySelected(key)
                                 })
@@ -160,7 +160,7 @@ fun AvailableKeysDialog(
                         Text(text = stringResource(R.string.cancel))
                     }
                     Spacer(modifier = Modifier.width(16.dp))
-                    if (selectedKey == null || selectedKey.device.address != currentKey?.device?.address) {
+                    if (selectedKey == null || selectedKey.address != currentKey?.address) {
                         TextButton(enabled = selectedKey != null, onClick = {
                             onConnect()
                             onDismiss()

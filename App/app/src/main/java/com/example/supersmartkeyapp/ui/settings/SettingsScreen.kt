@@ -83,10 +83,12 @@ private fun SettingsContent(
     Column(
         modifier = modifier.fillMaxSize()
     ) {
+        HorizontalDivider()
         if (isLoading) {
             LinearProgressIndicator(
                 modifier = Modifier
                     .width(240.dp)
+                    .padding(top = 8.dp)
                     .align(Alignment.CenterHorizontally)
             )
             return
@@ -123,6 +125,7 @@ private fun SettingsContent(
             maxVal = MAX_POLLING_RATE,
             steps = (MAX_POLLING_RATE - MIN_POLLING_RATE) - 1,
         )
+        HorizontalDivider()
     }
 }
 
@@ -137,25 +140,27 @@ private fun SettingsIntSlider(
     maxVal: Int,
     steps: Int
 ) {
+    val titleStyle = MaterialTheme.typography.titleMedium
+    val textStyle = MaterialTheme.typography.bodyLarge
     val colors = SliderDefaults.colors(
         activeTickColor = Color.Transparent,
         inactiveTickColor = Color.Transparent,
     )
-    Column(modifier = Modifier.padding(horizontal = 24.dp, vertical = 12.dp)) {
+    Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) {
         Text(
             text = title,
-            style = MaterialTheme.typography.bodyLarge,
+            style = titleStyle,
         )
         Text(
             text = "$value $units",
-            style = MaterialTheme.typography.bodySmall,
+            style = textStyle,
         )
         Box(
             contentAlignment = Alignment.Center, modifier = Modifier.fillMaxWidth()
         ) {
             Text(
                 "$minVal",
-                style = MaterialTheme.typography.bodySmall,
+                style = textStyle,
                 modifier = Modifier.align(Alignment.CenterStart)
             )
             Slider(
@@ -169,7 +174,7 @@ private fun SettingsIntSlider(
             )
             Text(
                 "$maxVal",
-                style = MaterialTheme.typography.bodySmall,
+                style = textStyle,
                 modifier = Modifier.align(Alignment.CenterEnd)
             )
         }

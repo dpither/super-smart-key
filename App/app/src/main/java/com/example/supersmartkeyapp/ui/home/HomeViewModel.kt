@@ -6,6 +6,7 @@ import com.example.supersmartkeyapp.data.manager.KeyServiceManager
 import com.example.supersmartkeyapp.data.repository.KeyRepository
 import com.example.supersmartkeyapp.data.repository.ServiceRepository
 import com.example.supersmartkeyapp.data.model.Key
+import com.example.supersmartkeyapp.util.DEFAULT_RSSI_THRESHOLD
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -18,6 +19,7 @@ data class HomeUiState(
     val key: Key? = null,
     val selectedKey: Key? = null,
     val rssi: Int? = null,
+    val rssiThreshold: Int = DEFAULT_RSSI_THRESHOLD,
     val availableKeys: List<Key> = emptyList(),
     val showAvailableKeysDialog: Boolean = false,
     val showBluetoothPermissionDialog: Boolean = false,
@@ -47,6 +49,14 @@ class HomeViewModel @Inject constructor(
             settingsRepository.isLockServiceRunningFlow.collect { value ->
                 _uiState.update {
                     it.copy(isServiceRunning = value)
+                }
+            }
+        }
+
+        viewModelScope.launch {
+            settingsRepository.settingsFlow.collect { value ->
+                _uiState.update {
+                    it.copy(rssiThreshold = value.rssiThreshold)
                 }
             }
         }
@@ -85,7 +95,7 @@ class HomeViewModel @Inject constructor(
     }
 
     fun connectKey() {
-        if (_uiState.value.selectedKey?.device?.address != _uiState.value.key?.device?.address) {
+        if (_uiState.value.selectedKey?.address != _uiState.value.key?.address) {
             keyServiceManager.stopLockService()
             keyServiceManager.startKeyService()
             viewModelScope.launch {

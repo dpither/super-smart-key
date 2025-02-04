@@ -21,7 +21,7 @@ private const val NULL_DEVICE_NAME = "Unnamed Device"
 @SuppressLint("MissingPermission")
 @Singleton
 class KeyRepository @Inject constructor(@ApplicationContext private val context: Context) {
-    //    TODO: Add isConnected boolean,implement connection button in Homeview, add selection in homevm can set key here in vm, link will update isconnected
+    //    TODO: Add isConnected boolean for cases where key is disconnected but service running?
     private val _key = MutableStateFlow<Key?>(null)
     val key: Flow<Key?> = _key
 
@@ -31,6 +31,7 @@ class KeyRepository @Inject constructor(@ApplicationContext private val context:
     private val bluetoothManager =
         context.getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager
     private var bluetoothGatt: BluetoothGatt? = null
+    private var bluetoothAdapter = bluetoothManager.adapter
 
     fun refreshAvailableKeys() {
         _availableKeys.update { emptyList() }
@@ -38,7 +39,7 @@ class KeyRepository @Inject constructor(@ApplicationContext private val context:
         bluetoothManager.getConnectedDevices(BluetoothProfile.GATT).forEach { device ->
             newList.add(
                 Key(
-                    name = device.name ?: NULL_DEVICE_NAME, device = device, rssi = null
+                    name = device.name ?: NULL_DEVICE_NAME, address = device.address, rssi = null
                 )
             )
         }
@@ -60,7 +61,7 @@ class KeyRepository @Inject constructor(@ApplicationContext private val context:
                             _key.update {
                                 Key(
                                     name = gatt.device.name ?: NULL_DEVICE_NAME,
-                                    device = gatt.device,
+                                    address = gatt.device.address,
                                     rssi = null
                                 )
                             }
@@ -88,7 +89,7 @@ class KeyRepository @Inject constructor(@ApplicationContext private val context:
             }
         }
 //        TODO: Figure out if i should autoreconnect (probably)
-        key.device.connectGatt(context, false, bluetoothGattCallback)
+        bluetoothAdapter.getRemoteDevice(key.address).connectGatt(context, true, bluetoothGattCallback)
     }
 
     fun disconnectKey() {
