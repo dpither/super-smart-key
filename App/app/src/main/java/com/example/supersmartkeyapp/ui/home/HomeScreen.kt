@@ -13,6 +13,8 @@ import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.animate
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -24,15 +26,19 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ElevatedButton
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LargeFloatingActionButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ProgressIndicatorDefaults
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Shapes
 import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -40,13 +46,18 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -59,6 +70,7 @@ import com.example.supersmartkeyapp.util.HomeTopAppBar
 import com.example.supersmartkeyapp.util.PermissionRationaleDialog
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.rememberMultiplePermissionsState
+import kotlin.math.min
 
 private const val TAG = "HOME_SCREEN"
 
@@ -204,15 +216,20 @@ private fun HomeContent(
     onStop: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    Column(
+    Box(
         modifier = modifier
             .fillMaxSize()
 //            Large FAB is 96, padding is 16 (96 + 16 +16 = 128)
-            .padding(bottom = 128.dp)
+//            .padding(bottom = 128.dp)
     ) {
         HorizontalDivider()
         if (key == null) {
-            Column(verticalArrangement = Arrangement.Center, modifier = Modifier.fillMaxSize().padding(16.dp)) {
+            Column(
+                verticalArrangement = Arrangement.Center,
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(16.dp)
+            ) {
                 Text(
                     text = stringResource(R.string.no_key_text),
                     textAlign = TextAlign.Center,
@@ -220,42 +237,38 @@ private fun HomeContent(
                 )
             }
         } else {
-            Column(
-//                verticalArrangement = Arrangement.SpaceBetween,
-                modifier = Modifier.fillMaxSize()
+            val rssi = key.rssi ?: 0
+            val progress = min(rssi / rssiThreshold.toFloat(), 1f)
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(16.dp)
             ) {
                 StatusText(
                     key = key,
                     rssiThreshold = rssiThreshold,
                     isServiceRunning = isServiceRunning,
-                    isKeyConnected = isKeyConnected,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(16.dp)
+                    isKeyConnected = isKeyConnected
                 )
-
-                val rssi = key.rssi ?: 0
-                Box(modifier = Modifier
-                    .align(Alignment.CenterHorizontally)
-                    .padding(horizontal = 16.dp)) {
+                Box(
+                    contentAlignment = Alignment.Center,
+                    modifier = Modifier
+                        .align(Alignment.Center)
+                ) {
                     DistanceIndicator(
-                        progress = rssi/rssiThreshold.toFloat(),
-                        isServiceRunning = isServiceRunning,
-                        modifier = Modifier.align(Alignment.Center)
+                        progress = progress,
+                        size = 240.dp
                     )
                     StartStopButton(
                         isServiceRunning = isServiceRunning,
+                        size = 200.dp,
                         onStart = onStart,
-                        onStop = onStop,
-                        modifier = Modifier
-                            .align(Alignment.Center)
-                            .width(240.dp)
+                        onStop = onStop
                     )
                 }
 
             }
         }
-        HorizontalDivider()
     }
 }
 
@@ -285,50 +298,69 @@ private fun LinkKeyButton(
 @Composable
 private fun StartStopButton(
     isServiceRunning: Boolean,
+    size: Dp = 200.dp,
     onStart: () -> Unit,
-    onStop: () -> Unit,
-    modifier: Modifier = Modifier
+    onStop: () -> Unit
 ) {
-    Button(
+    ElevatedButton(
         onClick = { if (isServiceRunning) onStop() else onStart() },
-        colors = ButtonDefaults.buttonColors(containerColor = if (isServiceRunning) MaterialTheme.colorScheme.errorContainer else MaterialTheme.colorScheme.primaryContainer),
-        modifier = modifier
+        colors = ButtonDefaults.elevatedButtonColors(
+            containerColor = if (isServiceRunning) MaterialTheme.colorScheme.errorContainer else MaterialTheme.colorScheme.primaryContainer,
+            contentColor = MaterialTheme.colorScheme.onPrimaryContainer
+        ),
+        elevation = ButtonDefaults.buttonElevation(defaultElevation = 8.dp),
+        modifier = Modifier.size(size)
     ) {
-        Text(text = if (isServiceRunning) stringResource(R.string.stop) else stringResource(R.string.start))
+        Text(
+            text = if (isServiceRunning) stringResource(R.string.stop) else stringResource(R.string.start),
+            style = MaterialTheme.typography.titleLarge
+        )
     }
 }
 
 @Composable
 private fun DistanceIndicator(
-    progress: Float, isServiceRunning: Boolean, modifier: Modifier = Modifier
+    progress: Float,
+    size: Dp = 240.dp,
 ) {
     val animatedProgress by animateFloatAsState(
         targetValue = progress,
         animationSpec = tween(durationMillis = 800, easing = FastOutSlowInEasing),
         label = "Distance Progress Animation"
     )
+    val color =
+        if (animatedProgress == 1f) MaterialTheme.colorScheme.errorContainer else MaterialTheme.colorScheme.primaryContainer
     Box(
-        modifier = modifier
-            .size(240.dp)
+        modifier = Modifier
+            .size(size)
     ) {
-        CircularProgressIndicator(
-            progress = { animatedProgress },
-            modifier = Modifier
-                .rotate(180f)
-                .fillMaxSize()
-                .align(Alignment.Center),
-            color = if (isServiceRunning) MaterialTheme.colorScheme.errorContainer else MaterialTheme.colorScheme.primaryContainer,
-            trackColor = Color.Transparent,
-            strokeWidth = 8.dp,
-        )
+//        Arc code by ChatGPT
+        Canvas(modifier = Modifier.fillMaxSize()) {
+            val stroke = 8.dp.toPx()
+            val diameter = size.toPx()
+            val radius = (diameter - stroke) / 2
+            val center = Offset(size.toPx() / 2, size.toPx() / 2)
+            val startAngle = 100f
+            val sweepAngle = 340f * animatedProgress
+
+            drawArc(
+                color = color,
+                startAngle = startAngle,
+                sweepAngle = sweepAngle,
+                useCenter = false,
+                style = Stroke(width = stroke, cap = StrokeCap.Round),
+                size = Size(radius * 2, radius * 2),
+                topLeft = Offset(center.x - radius, center.y - radius)
+            )
+        }
         Icon(
             imageVector = ImageVector.vectorResource(R.drawable.lock),
             contentDescription = stringResource(R.string.lock),
-            tint = if (isServiceRunning && animatedProgress >= 1.0) MaterialTheme.colorScheme.errorContainer else MaterialTheme.colorScheme.primaryContainer,
+            tint = color,
             modifier = Modifier
                 .align(Alignment.BottomCenter)
-                .size(24.dp)
-                .offset(y = 36.dp)
+                .size(size / 10)
+                .offset(y = 8.dp)
         )
     }
 }
@@ -344,7 +376,7 @@ private fun StatusText(
 ) {
     val titleStyle = MaterialTheme.typography.titleMedium
     val textStyle = MaterialTheme.typography.bodyLarge
-    Column(modifier = modifier) {
+    Column {
         Text(text = stringResource(R.string.key_information), style = titleStyle)
         Text(text = stringResource(R.string.name) + ": " + key.name, style = textStyle)
         Text(text = stringResource(R.string.address) + ": " + key.address, style = textStyle)
@@ -407,7 +439,7 @@ private fun HomeContentKeyPreview() {
         ) { paddingValues ->
             HomeContent(
                 key = Key(
-                    name = "Smart Tag", address = "00:11:22:33:AA:BB", rssi = -75
+                    name = "Smart Tag", address = "00:11:22:33:AA:BB", rssi = -62
                 ),
                 rssiThreshold = -100,
                 isKeyConnected = true,
@@ -433,7 +465,7 @@ private fun HomeContentKeyDisconnectedPreview() {
         ) { paddingValues ->
             HomeContent(
                 key = Key(
-                    name = "Smart Tag", address = "00:11:22:33:AA:BB", rssi = -99
+                    name = "Smart Tag", address = "00:11:22:33:AA:BB", rssi = -100
                 ),
                 rssiThreshold = -100,
                 isKeyConnected = false,
