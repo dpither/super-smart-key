@@ -8,6 +8,7 @@ import javax.inject.Singleton
 
 
 private const val TAG = "DEVICE_ADMIN"
+
 @Singleton
 class DeviceAdmin : DeviceAdminReceiver() {
     override fun onEnabled(context: Context, intent: Intent) {

@@ -89,7 +89,8 @@ class KeyRepository @Inject constructor(@ApplicationContext private val context:
             }
         }
 //        TODO: Figure out if i should autoreconnect (probably)
-        bluetoothAdapter.getRemoteDevice(key.address).connectGatt(context, true, bluetoothGattCallback)
+        bluetoothAdapter.getRemoteDevice(key.address)
+            .connectGatt(context, true, bluetoothGattCallback)
     }
 
     fun disconnectKey() {

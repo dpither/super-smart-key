@@ -91,41 +91,42 @@ private fun SettingsContent(
                     .padding(top = 8.dp)
                     .align(Alignment.CenterHorizontally)
             )
-            return
+        } else {
+            SettingsIntSlider(
+                title = stringResource(R.string.rssi_threshold),
+                units = stringResource(R.string.rssi_threshold_units),
+                value = rssiThreshold,
+                onValueChange = onRssiThresholdChange,
+                onValueChangeFinished = onRssiThresholdChangeFinished,
+                minVal = MIN_RSSI_THRESHOLD,
+                maxVal = MAX_RSSI_THRESHOLD,
+                steps = (MAX_RSSI_THRESHOLD - MIN_RSSI_THRESHOLD) - 1,
+            )
+            HorizontalDivider()
+            SettingsIntSlider(
+                title = stringResource(R.string.grace_period),
+                units = stringResource(R.string.grace_period_units),
+                value = gracePeriod,
+                onValueChange = onGracePeriodChange,
+                onValueChangeFinished = onGracePeriodChangeFinished,
+                minVal = MIN_GRACE_PERIOD,
+                maxVal = MAX_GRACE_PERIOD,
+                steps = (MAX_GRACE_PERIOD - MIN_GRACE_PERIOD) - 1,
+            )
+            HorizontalDivider()
+            SettingsIntSlider(
+                title = stringResource(R.string.polling_rate),
+                units = stringResource(R.string.polling_rate_units),
+                value = pollingRate,
+                onValueChange = onPollingRateChange,
+                onValueChangeFinished = onPollingRateChangeFinished,
+                minVal = MIN_POLLING_RATE,
+                maxVal = MAX_POLLING_RATE,
+                steps = (MAX_POLLING_RATE - MIN_POLLING_RATE) - 1,
+            )
+            HorizontalDivider()
         }
-        SettingsIntSlider(
-            title = stringResource(R.string.rssi_threshold),
-            units = stringResource(R.string.rssi_threshold_units),
-            value = rssiThreshold,
-            onValueChange = onRssiThresholdChange,
-            onValueChangeFinished = onRssiThresholdChangeFinished,
-            minVal = MIN_RSSI_THRESHOLD,
-            maxVal = MAX_RSSI_THRESHOLD,
-            steps = (MAX_RSSI_THRESHOLD - MIN_RSSI_THRESHOLD) - 1,
-        )
-        HorizontalDivider()
-        SettingsIntSlider(
-            title = stringResource(R.string.grace_period),
-            units = stringResource(R.string.grace_period_units),
-            value = gracePeriod,
-            onValueChange = onGracePeriodChange,
-            onValueChangeFinished = onGracePeriodChangeFinished,
-            minVal = MIN_GRACE_PERIOD,
-            maxVal = MAX_GRACE_PERIOD,
-            steps = (MAX_GRACE_PERIOD - MIN_GRACE_PERIOD) - 1,
-        )
-        HorizontalDivider()
-        SettingsIntSlider(
-            title = stringResource(R.string.polling_rate),
-            units = stringResource(R.string.polling_rate_units),
-            value = pollingRate,
-            onValueChange = onPollingRateChange,
-            onValueChangeFinished = onPollingRateChangeFinished,
-            minVal = MIN_POLLING_RATE,
-            maxVal = MAX_POLLING_RATE,
-            steps = (MAX_POLLING_RATE - MIN_POLLING_RATE) - 1,
-        )
-        HorizontalDivider()
+
     }
 }
 
@@ -159,9 +160,7 @@ private fun SettingsIntSlider(
             contentAlignment = Alignment.Center, modifier = Modifier.fillMaxWidth()
         ) {
             Text(
-                "$minVal",
-                style = textStyle,
-                modifier = Modifier.align(Alignment.CenterStart)
+                "$minVal", style = textStyle, modifier = Modifier.align(Alignment.CenterStart)
             )
             Slider(
                 value = value.toFloat(),
@@ -173,9 +172,7 @@ private fun SettingsIntSlider(
                 modifier = Modifier.width(240.dp)
             )
             Text(
-                "$maxVal",
-                style = textStyle,
-                modifier = Modifier.align(Alignment.CenterEnd)
+                "$maxVal", style = textStyle, modifier = Modifier.align(Alignment.CenterEnd)
             )
         }
     }
@@ -190,7 +187,8 @@ fun SettingsContentPreview() {
                 modifier = Modifier.fillMaxSize(),
                 topBar = { SettingsTopAppBar(onBack = {}) },
             ) { paddingValues ->
-                SettingsContent(rssiThreshold = DEFAULT_RSSI_THRESHOLD,
+                SettingsContent(
+                    rssiThreshold = DEFAULT_RSSI_THRESHOLD,
                     onRssiThresholdChange = {},
                     onRssiThresholdChangeFinished = {},
                     gracePeriod = DEFAULT_GRACE_PERIOD,
@@ -216,7 +214,8 @@ fun SettingsContentLoadingPreview() {
                 modifier = Modifier.fillMaxSize(),
                 topBar = { SettingsTopAppBar(onBack = {}) },
             ) { paddingValues ->
-                SettingsContent(rssiThreshold = DEFAULT_RSSI_THRESHOLD,
+                SettingsContent(
+                    rssiThreshold = DEFAULT_RSSI_THRESHOLD,
                     onRssiThresholdChange = {},
                     onRssiThresholdChangeFinished = {},
                     gracePeriod = DEFAULT_GRACE_PERIOD,

@@ -39,14 +39,14 @@ class ServiceRepository @Inject constructor(@ApplicationContext private val cont
      * Get the settings flow.
      */
     val settingsFlow: Flow<Settings> = dataStore.data.catch { exception ->
-            if (exception is IOException) {
-                Log.e(TAG, "Error reading settings", exception)
-            } else {
-                throw exception
-            }
-        }.map { preferences ->
-            mapSettings(preferences)
+        if (exception is IOException) {
+            Log.e(TAG, "Error reading settings", exception)
+        } else {
+            throw exception
         }
+    }.map { preferences ->
+        mapSettings(preferences)
+    }
 
     suspend fun updateRssiThreshold(rssiThreshold: Int) {
         dataStore.edit { preferences ->

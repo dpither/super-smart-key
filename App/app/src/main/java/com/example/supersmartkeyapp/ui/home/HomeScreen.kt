@@ -10,36 +10,23 @@ import android.os.Build
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.core.FastOutSlowInEasing
-import androidx.compose.animation.core.animate
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ElevatedButton
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LargeFloatingActionButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ProgressIndicatorDefaults
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Shapes
-import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -48,7 +35,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -117,17 +103,16 @@ fun HomeScreen(
         }
     }
 
-    if (uiState.showBluetoothPermissionDialog) {
-        PermissionRationaleDialog(
-            title = bluetoothPermissionTitle,
-            rationale = bluetoothPermissionRationale,
-            onConfirm = {
-                bluetoothPermissionState.launchMultiplePermissionRequest()
-                viewModel.closeBluetoothPermissionDialog()
-            },
-            onDismiss = viewModel::closeBluetoothPermissionDialog
-        )
-    }
+    PermissionRationaleDialog(
+        visible = uiState.showBluetoothPermissionDialog,
+        title = bluetoothPermissionTitle,
+        rationale = bluetoothPermissionRationale,
+        onConfirm = {
+            bluetoothPermissionState.launchMultiplePermissionRequest()
+            viewModel.closeBluetoothPermissionDialog()
+        },
+        onDismiss = viewModel::closeBluetoothPermissionDialog
+    )
 
     val devicePolicyManager =
         context.getSystemService(Context.DEVICE_POLICY_SERVICE) as DevicePolicyManager
@@ -145,29 +130,27 @@ fun HomeScreen(
     val deviceAdminLauncher =
         rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) {}
 
-    if (uiState.showDeviceAdminDialog) {
-        PermissionRationaleDialog(
-            title = stringResource(R.string.device_admin),
-            rationale = stringResource(R.string.device_admin_rationale),
-            onConfirm = {
-                deviceAdminLauncher.launch(deviceAdminIntent)
-                viewModel.closeDeviceAdminDialog()
-            },
-            onDismiss = viewModel::closeDeviceAdminDialog
-        )
-    }
+    PermissionRationaleDialog(
+        visible = uiState.showDeviceAdminDialog,
+        title = stringResource(R.string.device_admin),
+        rationale = stringResource(R.string.device_admin_rationale),
+        onConfirm = {
+            deviceAdminLauncher.launch(deviceAdminIntent)
+            viewModel.closeDeviceAdminDialog()
+        },
+        onDismiss = viewModel::closeDeviceAdminDialog
+    )
 
-    if (uiState.showAvailableKeysDialog) {
-        AvailableKeysDialog(
-            availableKeys = uiState.availableKeys,
-            currentKey = uiState.key,
-            selectedKey = uiState.selectedKey,
-            onKeySelected = viewModel::selectKey,
-            onDismiss = viewModel::closeAvailableKeysDialog,
-            onConnect = viewModel::connectKey,
-            onDisconnect = viewModel::disconnectKey
-        )
-    }
+    AvailableKeysDialog(
+        visible = uiState.showAvailableKeysDialog,
+        availableKeys = uiState.availableKeys,
+        currentKey = uiState.key,
+        selectedKey = uiState.selectedKey,
+        onKeySelected = viewModel::selectKey,
+        onDismiss = viewModel::closeAvailableKeysDialog,
+        onConnect = viewModel::connectKey,
+        onDisconnect = viewModel::disconnectKey
+    )
 
     Scaffold(
         modifier = modifier.fillMaxSize(),
@@ -217,8 +200,7 @@ private fun HomeContent(
     modifier: Modifier = Modifier
 ) {
     Box(
-        modifier = modifier
-            .fillMaxSize()
+        modifier = modifier.fillMaxSize()
 //            Large FAB is 96, padding is 16 (96 + 16 +16 = 128)
 //            .padding(bottom = 128.dp)
     ) {
@@ -251,13 +233,10 @@ private fun HomeContent(
                     isKeyConnected = isKeyConnected
                 )
                 Box(
-                    contentAlignment = Alignment.Center,
-                    modifier = Modifier
-                        .align(Alignment.Center)
+                    contentAlignment = Alignment.Center, modifier = Modifier.align(Alignment.Center)
                 ) {
                     DistanceIndicator(
-                        progress = progress,
-                        size = 240.dp
+                        progress = progress, size = 240.dp
                     )
                     StartStopButton(
                         isServiceRunning = isServiceRunning,
@@ -297,10 +276,7 @@ private fun LinkKeyButton(
 
 @Composable
 private fun StartStopButton(
-    isServiceRunning: Boolean,
-    size: Dp = 200.dp,
-    onStart: () -> Unit,
-    onStop: () -> Unit
+    isServiceRunning: Boolean, size: Dp = 200.dp, onStart: () -> Unit, onStop: () -> Unit
 ) {
     ElevatedButton(
         onClick = { if (isServiceRunning) onStop() else onStart() },
@@ -331,8 +307,7 @@ private fun DistanceIndicator(
     val color =
         if (animatedProgress == 1f) MaterialTheme.colorScheme.errorContainer else MaterialTheme.colorScheme.primaryContainer
     Box(
-        modifier = Modifier
-            .size(size)
+        modifier = Modifier.size(size)
     ) {
 //        Arc code by ChatGPT
         Canvas(modifier = Modifier.fillMaxSize()) {
@@ -395,8 +370,7 @@ private fun StatusText(
                 style = textStyle
             )
             Text(
-                text = " ",
-                style = textStyle
+                text = " ", style = textStyle
             )
         }
     }

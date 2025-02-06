@@ -46,6 +46,7 @@ private const val SERVICE_ID = 426
 class KeyService : Service() {
     @Inject
     lateinit var settingsRepository: ServiceRepository
+
     @Inject
     lateinit var keyRepository: KeyRepository
 
@@ -70,7 +71,7 @@ class KeyService : Service() {
         return binder
     }
 
-//    TODO: Figure out stopping service after noti stop when app is closed
+    //    TODO: Figure out stopping service after noti stop when app is closed
     override fun onStartCommand(intent: Intent, flags: Int, startId: Int): Int {
         if (intent.action == ACTION_STOP_LOCK_SERVICE) {
             stopLockService()
@@ -205,7 +206,7 @@ class KeyService : Service() {
         keyRepository.disconnectKey()
     }
 
-//    TODO: Move to admin maybe?
+    //    TODO: Move to admin maybe?
     private fun lockDevice() {
         val devicePolicyManager =
             getSystemService(Context.DEVICE_POLICY_SERVICE) as DevicePolicyManager

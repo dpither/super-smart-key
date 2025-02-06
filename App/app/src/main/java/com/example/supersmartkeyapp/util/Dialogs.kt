@@ -1,10 +1,23 @@
 package com.example.supersmartkeyapp.util
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.EaseIn
+import androidx.compose.animation.core.EaseOut
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -16,39 +29,49 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.RadioButton
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import com.example.supersmartkeyapp.R
 import com.example.supersmartkeyapp.data.model.Key
 import com.example.supersmartkeyapp.ui.theme.AppTheme
 
 @Composable
 fun PermissionRationaleDialog(
+    visible: Boolean,
     title: String,
     rationale: String,
     onConfirm: () -> Unit,
     onDismiss: () -> Unit,
 ) {
-    Dialog(onDismissRequest = onDismiss) {
+    CustomDialog(showDialog = visible, onDismissRequest = onDismiss) {
         Card(
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(16.dp),
         ) {
             Column {
                 Column(
-                    modifier = Modifier
-                        .padding(16.dp)
+                    modifier = Modifier.padding(16.dp)
                 ) {
                     Text(
-                        text = title,
-                        style = MaterialTheme.typography.titleLarge
+                        text = title, style = MaterialTheme.typography.titleLarge
                     )
                 }
                 HorizontalDivider()
@@ -61,19 +84,16 @@ fun PermissionRationaleDialog(
                 )
                 HorizontalDivider()
                 Row(
-                    modifier = Modifier
-                        .padding(16.dp)
+                    modifier = Modifier.padding(16.dp)
                 ) {
                     TextButton(
-                        onClick = onDismiss,
-                        modifier = Modifier.weight(1f)
+                        onClick = onDismiss, modifier = Modifier.weight(1f)
                     ) {
                         Text(text = stringResource(R.string.cancel))
                     }
                     Spacer(modifier = Modifier.width(16.dp))
                     TextButton(
-                        onClick = onConfirm,
-                        modifier = Modifier.weight(1f)
+                        onClick = onConfirm, modifier = Modifier.weight(1f)
                     ) {
                         Text(text = stringResource(R.string.ok))
                     }
@@ -85,6 +105,7 @@ fun PermissionRationaleDialog(
 
 @Composable
 fun AvailableKeysDialog(
+    visible: Boolean,
     availableKeys: List<Key>,
     currentKey: Key?,
     selectedKey: Key?,
@@ -94,16 +115,14 @@ fun AvailableKeysDialog(
     onDismiss: () -> Unit
 ) {
     val scrollState = rememberScrollState()
-
-    Dialog(onDismissRequest = onDismiss) {
+    CustomDialog(showDialog = visible, onDismissRequest = onDismiss) {
         Card(
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(16.dp),
         ) {
             Column {
                 Column(
-                    modifier = Modifier
-                        .padding(16.dp)
+                    modifier = Modifier.padding(16.dp)
                 ) {
                     Text(
                         text = stringResource(R.string.key_dialog_title),
@@ -150,12 +169,10 @@ fun AvailableKeysDialog(
                 }
                 HorizontalDivider()
                 Row(
-                    modifier = Modifier
-                        .padding(16.dp)
+                    modifier = Modifier.padding(16.dp)
                 ) {
                     TextButton(
-                        onClick = onDismiss,
-                        modifier = Modifier.weight(1f)
+                        onClick = onDismiss, modifier = Modifier.weight(1f)
                     ) {
                         Text(text = stringResource(R.string.cancel))
                     }
@@ -214,14 +231,76 @@ private fun KeyRow(
     }
 }
 
+@Composable
+private fun CustomDialog(
+    showDialog: Boolean, onDismissRequest: () -> Unit, content: @Composable () -> Unit
+) {
+    val duration = 300
+    var showAnimatedDialog by remember { mutableStateOf(false) }
+    LaunchedEffect(showDialog) {
+        if (showDialog) showAnimatedDialog = true
+    }
+    if (showAnimatedDialog) {
+        Dialog(
+            onDismissRequest = onDismissRequest,
+            properties = DialogProperties(usePlatformDefaultWidth = false)
+        ) {
+            Box(
+                contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()
+            ) {
+                var animateIn by remember { mutableStateOf(false) }
+                LaunchedEffect(Unit) { animateIn = true }
+                Box(modifier = Modifier
+                    .pointerInput(Unit) { detectTapGestures { onDismissRequest() } }
+                    .fillMaxSize())
+                AnimatedVisibility(
+                    visible = animateIn && showDialog, enter = fadeIn(
+                        animationSpec = tween(
+                            durationMillis = duration, easing = LinearEasing
+                        )
+                    ) + slideInVertically(animationSpec = tween(
+                        durationMillis = duration, easing = EaseIn
+                    ), initialOffsetY = { it }), exit = fadeOut(
+                        animationSpec = tween(
+                            durationMillis = duration, easing = LinearEasing
+                        )
+                    ) + slideOutVertically(animationSpec = tween(
+                        durationMillis = duration, easing = EaseOut
+                    ), targetOffsetY = { it }), label = "test"
+                ) {
+                    Box(contentAlignment = Alignment.Center,
+                        modifier = Modifier
+                            .pointerInput(Unit) { detectTapGestures { } }
+                            .shadow(8.dp, shape = RoundedCornerShape(16.dp))
+                            .width(300.dp)
+                            .clip(RoundedCornerShape(16.dp))
+                            .background(MaterialTheme.colorScheme.surface)) {
+                        content()
+                    }
+
+                    DisposableEffect(Unit) {
+                        onDispose {
+                            showAnimatedDialog = false
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
 @Preview
 @Composable
 private fun PermissionRationaleDialogPreview() {
     AppTheme {
-        PermissionRationaleDialog(title = stringResource(R.string.bluetooth_permissions),
-            rationale = stringResource(R.string.bluetooth_denied_rationale),
-            onConfirm = {},
-            onDismiss = {})
+        Surface {
+            PermissionRationaleDialog(visible = true,
+                title = stringResource(R.string.bluetooth_permissions),
+                rationale = stringResource(R.string.bluetooth_denied_rationale),
+                onConfirm = {},
+                onDismiss = {})
+
+        }
     }
 }
 
@@ -230,6 +309,7 @@ private fun PermissionRationaleDialogPreview() {
 private fun AvailableKeysDialogPreview() {
     AppTheme {
         AvailableKeysDialog(availableKeys = emptyList(),
+            visible = true,
             selectedKey = null,
             currentKey = null,
             onDismiss = {},
