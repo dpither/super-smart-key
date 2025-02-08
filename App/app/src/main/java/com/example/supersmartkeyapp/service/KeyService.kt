@@ -175,7 +175,7 @@ class KeyService : Service() {
         val mainPendingIntent =
             PendingIntent.getActivity(this, 0, mainIntent, PendingIntent.FLAG_IMMUTABLE)
 
-        val notification = NotificationCompat.Builder(this, CHANNEL_ID).setSmallIcon(R.drawable.key)
+        val notification = NotificationCompat.Builder(this, CHANNEL_ID).setSmallIcon(R.drawable.ssk_icon)
             .setContentTitle(getString(R.string.notification_title))
             .setContentText(getString(R.string.notification_text)).setOngoing(true)
             .setPriority(NotificationCompat.PRIORITY_DEFAULT).setContentIntent(mainPendingIntent)

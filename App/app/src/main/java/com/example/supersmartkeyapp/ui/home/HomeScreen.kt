@@ -9,13 +9,26 @@ import android.content.res.Configuration
 import android.os.Build
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.EaseIn
+import androidx.compose.animation.core.EaseOut
 import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
@@ -52,6 +65,7 @@ import com.example.supersmartkeyapp.admin.DeviceAdmin
 import com.example.supersmartkeyapp.data.model.Key
 import com.example.supersmartkeyapp.ui.theme.AppTheme
 import com.example.supersmartkeyapp.util.AvailableKeysDialog
+import com.example.supersmartkeyapp.util.DEFAULT_ANIMATION_DURATION
 import com.example.supersmartkeyapp.util.HomeTopAppBar
 import com.example.supersmartkeyapp.util.PermissionRationaleDialog
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
@@ -201,11 +215,23 @@ private fun HomeContent(
 ) {
     Box(
         modifier = modifier.fillMaxSize()
-//            Large FAB is 96, padding is 16 (96 + 16 +16 = 128)
-//            .padding(bottom = 128.dp)
     ) {
         HorizontalDivider()
-        if (key == null) {
+        AnimatedVisibility(
+            visible = key == null,
+            enter = fadeIn(
+                animationSpec = tween(
+                    durationMillis = DEFAULT_ANIMATION_DURATION,
+                    easing = LinearEasing
+                )
+            ),
+            exit = fadeOut(
+                animationSpec = tween(
+                    durationMillis = DEFAULT_ANIMATION_DURATION,
+                    easing = LinearEasing
+                )
+            )
+        ) {
             Column(
                 verticalArrangement = Arrangement.Center,
                 modifier = Modifier
@@ -218,22 +244,36 @@ private fun HomeContent(
                     style = MaterialTheme.typography.bodyLarge,
                 )
             }
-        } else {
-            val rssi = key.rssi ?: 0
+        }
+        AnimatedVisibility(
+            visible = key != null,
+            enter = fadeIn(
+                animationSpec = tween(
+                    durationMillis = DEFAULT_ANIMATION_DURATION,
+                    easing = LinearEasing
+                )
+            ),
+            exit = fadeOut(
+                animationSpec = tween(
+                    durationMillis = DEFAULT_ANIMATION_DURATION,
+                    easing = LinearEasing
+                )
+            )
+        ) {
+            val rssi = key?.rssi ?: 0
             val progress = min(rssi / rssiThreshold.toFloat(), 1f)
             Box(
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(16.dp)
             ) {
-                StatusText(
+                KeyInfo(
                     key = key,
-                    rssiThreshold = rssiThreshold,
-                    isServiceRunning = isServiceRunning,
                     isKeyConnected = isKeyConnected
                 )
                 Box(
-                    contentAlignment = Alignment.Center, modifier = Modifier.align(Alignment.Center)
+                    contentAlignment = Alignment.Center,
+                    modifier = Modifier.align(Alignment.Center)
                 ) {
                     DistanceIndicator(
                         progress = progress, size = 240.dp
@@ -302,7 +342,7 @@ private fun DistanceIndicator(
     val animatedProgress by animateFloatAsState(
         targetValue = progress,
         animationSpec = tween(durationMillis = 800, easing = FastOutSlowInEasing),
-        label = "Distance Progress Animation"
+        label = "progress animation"
     )
     val color =
         if (animatedProgress == 1f) MaterialTheme.colorScheme.errorContainer else MaterialTheme.colorScheme.primaryContainer
@@ -342,36 +382,159 @@ private fun DistanceIndicator(
 
 //TODO: Update
 @Composable
-private fun StatusText(
-    key: Key,
-    rssiThreshold: Int,
+private fun KeyInfo(
+    key: Key?,
     isKeyConnected: Boolean,
-    isServiceRunning: Boolean,
-    modifier: Modifier = Modifier
 ) {
     val titleStyle = MaterialTheme.typography.titleMedium
     val textStyle = MaterialTheme.typography.bodyLarge
+    val name = key?.name ?: " "
+    val address = key?.address ?: " "
+    val rssi = key?.rssi ?: 0
+    val status = if (isKeyConnected) {
+        stringResource(R.string.connected)
+    } else {
+        stringResource(R.string.disconnected)
+    }
     Column {
         Text(text = stringResource(R.string.key_information), style = titleStyle)
-        Text(text = stringResource(R.string.name) + ": " + key.name, style = textStyle)
-        Text(text = stringResource(R.string.address) + ": " + key.address, style = textStyle)
-        if (isKeyConnected) {
-            Text(
-                text = stringResource(R.string.status) + ": " + stringResource(R.string.connected),
-                style = textStyle
+        AnimatedContent(
+            targetState = name,
+            transitionSpec = {
+                fadeIn(
+                    animationSpec = tween(
+                        durationMillis = DEFAULT_ANIMATION_DURATION,
+                        easing = LinearEasing
+                    )
+                ) togetherWith fadeOut(
+                    animationSpec = tween(
+                        durationMillis = DEFAULT_ANIMATION_DURATION,
+                        easing = LinearEasing
+                    )
+                )
+            },
+            label = "name animation"
+        ) { targetName ->
+            Text(text = stringResource(R.string.name) + ": " + targetName, style = textStyle)
+        }
+        AnimatedContent(
+            targetState = address,
+            transitionSpec = {
+                fadeIn(
+                    animationSpec = tween(
+                        durationMillis = DEFAULT_ANIMATION_DURATION,
+                        easing = LinearEasing
+                    )
+                ) togetherWith fadeOut(
+                    animationSpec = tween(
+                        durationMillis = DEFAULT_ANIMATION_DURATION,
+                        easing = LinearEasing
+                    )
+                )
+            },
+            label = "address animation"
+        ) { targetAddress ->
+            Text(text = stringResource(R.string.address) + ": " + targetAddress, style = textStyle)
+        }
+
+        AnimatedContent(
+            targetState = status,
+            transitionSpec = {
+                fadeIn(
+                    animationSpec = tween(
+                        durationMillis = DEFAULT_ANIMATION_DURATION,
+                        easing = LinearEasing
+                    )
+                ) togetherWith fadeOut(
+                    animationSpec = tween(
+                        durationMillis = DEFAULT_ANIMATION_DURATION,
+                        easing = LinearEasing
+                    )
+                )
+            },
+            label = "status animation"
+        ) { targetStatus ->
+            Text(text = stringResource(R.string.status) + ": " + targetStatus, style = textStyle)
+        }
+
+        AnimatedVisibility(
+            visible = isKeyConnected && key?.rssi != null,
+            enter = slideInVertically(
+                animationSpec = tween(
+                    durationMillis = DEFAULT_ANIMATION_DURATION,
+                    easing = EaseIn
+                )
+            ) + expandVertically(
+                animationSpec = tween(
+                    durationMillis = DEFAULT_ANIMATION_DURATION,
+                    easing = EaseIn
+                )
+            ) + fadeIn(
+                animationSpec = tween(
+                    durationMillis = DEFAULT_ANIMATION_DURATION,
+                    easing = LinearEasing
+                )
+            ),
+            exit = slideOutVertically(
+                animationSpec = tween(
+                    durationMillis = DEFAULT_ANIMATION_DURATION,
+                    easing = EaseOut
+                )
+            ) + shrinkVertically(
+                animationSpec = tween(
+                    durationMillis = DEFAULT_ANIMATION_DURATION,
+                    easing = EaseOut
+                )
+            ) + fadeOut(
+                animationSpec = tween(
+                    durationMillis = DEFAULT_ANIMATION_DURATION,
+                    easing = LinearEasing
+                )
             )
-            Text(
-                text = stringResource(R.string.rssi) + ": " + key.rssi + " " + stringResource(R.string.rssi_threshold_units),
-                style = textStyle
-            )
-        } else {
-            Text(
-                text = stringResource(R.string.status) + ": " + stringResource(R.string.disconnected),
-                style = textStyle
-            )
-            Text(
-                text = " ", style = textStyle
-            )
+        ) {
+            Row {
+                Text(
+                    text = stringResource(R.string.rssi) + ": ",
+                    style = textStyle
+                )
+                AnimatedContent(
+                    targetState = rssi,
+                    transitionSpec = {
+                        if (targetState > initialState) {
+                            slideInVertically { height -> height } + fadeIn(
+                                animationSpec = tween(
+                                    durationMillis = DEFAULT_ANIMATION_DURATION,
+                                    easing = LinearEasing
+                                )
+                            ) togetherWith slideOutVertically { height -> -height } + fadeOut(
+                                animationSpec = tween(
+                                    durationMillis = DEFAULT_ANIMATION_DURATION,
+                                    easing = LinearEasing
+                                )
+                            )
+                        } else {
+                            slideInVertically { height -> -height } + fadeIn(
+                                animationSpec = tween(
+                                    durationMillis = DEFAULT_ANIMATION_DURATION,
+                                    easing = LinearEasing
+                                )
+                            ) togetherWith slideOutVertically { height -> height } + fadeOut(
+                                animationSpec = tween(
+                                    durationMillis = DEFAULT_ANIMATION_DURATION,
+                                    easing = LinearEasing
+                                )
+                            )
+                        }
+                    },
+                    label = "rssi animation"
+                ) { targetRssi ->
+                    Text(text = "$targetRssi", style = textStyle)
+                }
+                Text(
+                    text = " " + stringResource(R.string.rssi_threshold_units),
+                    style = textStyle
+                )
+            }
         }
     }
 }

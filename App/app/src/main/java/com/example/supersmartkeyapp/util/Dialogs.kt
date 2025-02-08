@@ -235,7 +235,6 @@ private fun KeyRow(
 private fun CustomDialog(
     showDialog: Boolean, onDismissRequest: () -> Unit, content: @Composable () -> Unit
 ) {
-    val duration = 300
     var showAnimatedDialog by remember { mutableStateOf(false) }
     LaunchedEffect(showDialog) {
         if (showDialog) showAnimatedDialog = true
@@ -256,16 +255,16 @@ private fun CustomDialog(
                 AnimatedVisibility(
                     visible = animateIn && showDialog, enter = fadeIn(
                         animationSpec = tween(
-                            durationMillis = duration, easing = LinearEasing
+                            durationMillis = DEFAULT_ANIMATION_DURATION, easing = LinearEasing
                         )
                     ) + slideInVertically(animationSpec = tween(
-                        durationMillis = duration, easing = EaseIn
+                        durationMillis = DEFAULT_ANIMATION_DURATION, easing = EaseIn
                     ), initialOffsetY = { it }), exit = fadeOut(
                         animationSpec = tween(
-                            durationMillis = duration, easing = LinearEasing
+                            durationMillis = DEFAULT_ANIMATION_DURATION, easing = LinearEasing
                         )
                     ) + slideOutVertically(animationSpec = tween(
-                        durationMillis = duration, easing = EaseOut
+                        durationMillis = DEFAULT_ANIMATION_DURATION, easing = EaseOut
                     ), targetOffsetY = { it }), label = "test"
                 ) {
                     Box(contentAlignment = Alignment.Center,
