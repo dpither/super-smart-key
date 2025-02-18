@@ -2,6 +2,7 @@ package com.example.supersmartkeyapp.ui.settings
 
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -148,14 +149,16 @@ private fun SettingsIntSlider(
         inactiveTickColor = Color.Transparent,
     )
     Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) {
-        Text(
-            text = title,
-            style = titleStyle,
-        )
-        Text(
-            text = "$value $units",
-            style = textStyle,
-        )
+        Row {
+            Text(
+                text = "$title: ",
+                style = titleStyle,
+            )
+            Text(
+                text = "$value $units",
+                style = textStyle,
+            )
+        }
         Box(
             contentAlignment = Alignment.Center, modifier = Modifier.fillMaxWidth()
         ) {
@@ -187,8 +190,7 @@ fun SettingsContentPreview() {
                 modifier = Modifier.fillMaxSize(),
                 topBar = { SettingsTopAppBar(onBack = {}) },
             ) { paddingValues ->
-                SettingsContent(
-                    rssiThreshold = DEFAULT_RSSI_THRESHOLD,
+                SettingsContent(rssiThreshold = DEFAULT_RSSI_THRESHOLD,
                     onRssiThresholdChange = {},
                     onRssiThresholdChangeFinished = {},
                     gracePeriod = DEFAULT_GRACE_PERIOD,
@@ -214,8 +216,7 @@ fun SettingsContentLoadingPreview() {
                 modifier = Modifier.fillMaxSize(),
                 topBar = { SettingsTopAppBar(onBack = {}) },
             ) { paddingValues ->
-                SettingsContent(
-                    rssiThreshold = DEFAULT_RSSI_THRESHOLD,
+                SettingsContent(rssiThreshold = DEFAULT_RSSI_THRESHOLD,
                     onRssiThresholdChange = {},
                     onRssiThresholdChangeFinished = {},
                     gracePeriod = DEFAULT_GRACE_PERIOD,

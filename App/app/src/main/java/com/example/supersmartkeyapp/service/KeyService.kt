@@ -7,9 +7,11 @@ import android.app.NotificationManager
 import android.app.PendingIntent
 import android.app.Service
 import android.app.admin.DevicePolicyManager
+import android.content.BroadcastReceiver
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
+import android.content.IntentFilter
 import android.content.pm.ServiceInfo
 import android.os.Binder
 import android.os.Build
@@ -17,6 +19,9 @@ import android.os.IBinder
 import android.util.Log
 import androidx.core.app.NotificationCompat
 import androidx.core.app.ServiceCompat
+import androidx.lifecycle.DefaultLifecycleObserver
+import androidx.lifecycle.LifecycleOwner
+import androidx.lifecycle.ProcessLifecycleOwner
 import com.example.supersmartkeyapp.R
 import com.example.supersmartkeyapp.SuperSmartKeyActivity
 import com.example.supersmartkeyapp.admin.DeviceAdmin
@@ -43,15 +48,17 @@ private const val CHANNEL_NAME = "SuperSmartKeyChannel"
 private const val SERVICE_ID = 426
 
 @AndroidEntryPoint
-class KeyService : Service() {
+class KeyService : Service(), DefaultLifecycleObserver {
     @Inject
     lateinit var settingsRepository: ServiceRepository
 
     @Inject
     lateinit var keyRepository: KeyRepository
 
+    private lateinit var wakeReceiver: BroadcastReceiver
     private val binder = KeyBinder()
     private var rssiPollingJob: Job? = null
+    private var gracePeriodJob: Job? = null
     private val updateScope = CoroutineScope(Dispatchers.IO + Job())
     private val collectScope = CoroutineScope(Dispatchers.IO + Job())
 
@@ -61,20 +68,60 @@ class KeyService : Service() {
         pollingRateSeconds = DEFAULT_POLLING_RATE
     )
     private var isLockServiceRunning = false
+    private var isGracePeriod = false
+    private var isAppBackground = false
 
 
     inner class KeyBinder : Binder() {
         fun getService(): KeyService = this@KeyService
     }
 
+    override fun onCreate() {
+        super<Service>.onCreate()
+        ProcessLifecycleOwner.get().lifecycle.addObserver(this)
+        wakeReceiver = object : BroadcastReceiver() {
+            override fun onReceive(context: Context?, intent: Intent?) {
+                when (intent?.action) {
+                    Intent.ACTION_USER_PRESENT -> if(isLockServiceRunning) startGracePeriod()
+                }
+            }
+        }
+        val filter = IntentFilter().apply {
+            addAction(Intent.ACTION_USER_PRESENT)
+        }
+        registerReceiver(wakeReceiver, filter)
+    }
+
+    override fun onStart(owner: LifecycleOwner) {
+        super.onStop(owner)
+        Log.d(TAG, "App is in the foreground")
+        isAppBackground = false
+    }
+
+//    TODO: Prevent polling in background if service not running
+    override fun onStop(owner: LifecycleOwner) {
+        super.onStop(owner)
+        Log.d(TAG, "App is in the background")
+        isAppBackground = true
+    }
+
+
     override fun onBind(intent: Intent): IBinder {
         return binder
     }
 
+    override fun onUnbind(intent: Intent): Boolean {
+        return super.onUnbind(intent)
+    }
+
     //    TODO: Figure out stopping service after noti stop when app is closed
+//    TODO: Figure out weird process mangement on destroy/caached process
     override fun onStartCommand(intent: Intent, flags: Int, startId: Int): Int {
         if (intent.action == ACTION_STOP_LOCK_SERVICE) {
             stopLockService()
+            if(isAppBackground) {
+                stopSelf()
+            }
         } else {
             collectScope.launch {
                 settingsRepository.settingsFlow.collect { value ->
@@ -89,9 +136,11 @@ class KeyService : Service() {
             collectScope.launch {
                 keyRepository.key.collect { value ->
                     Log.d(TAG, "RSSI: ${value?.rssi}")
-                    if (value?.rssi != null && isLockServiceRunning) {
+                    if (value?.rssi != null && isLockServiceRunning && !isGracePeriod) {
                         if (value.rssi < settings.rssiThreshold) {
                             Log.d(TAG, "Locking device")
+                            lockDevice()
+                            isGracePeriod = true
                         }
                     }
                 }
@@ -102,15 +151,12 @@ class KeyService : Service() {
         return START_STICKY
     }
 
-    override fun onUnbind(intent: Intent): Boolean {
-        return super.onUnbind(intent)
-    }
-
     override fun onDestroy() {
-        super.onDestroy()
-
+        super<Service>.onDestroy()
+        ProcessLifecycleOwner.get().lifecycle.removeObserver(this)
+        unregisterReceiver(wakeReceiver)
         stopRssiPolling()
-
+        stopGracePeriod()
         if (isLockServiceRunning) {
             updateScope.launch {
                 settingsRepository.updateIsLockServiceRunning(false)
@@ -127,6 +173,7 @@ class KeyService : Service() {
     fun stopLockService() {
         if (isLockServiceRunning) {
             stopForeground(STOP_FOREGROUND_REMOVE)
+            stopGracePeriod()
             updateScope.launch {
                 settingsRepository.updateIsLockServiceRunning(false)
             }
@@ -175,13 +222,15 @@ class KeyService : Service() {
         val mainPendingIntent =
             PendingIntent.getActivity(this, 0, mainIntent, PendingIntent.FLAG_IMMUTABLE)
 
-        val notification = NotificationCompat.Builder(this, CHANNEL_ID).setSmallIcon(R.drawable.ssk_icon)
-            .setContentTitle(getString(R.string.notification_title))
-            .setContentText(getString(R.string.notification_text)).setOngoing(true)
-            .setPriority(NotificationCompat.PRIORITY_DEFAULT).setContentIntent(mainPendingIntent)
-            .addAction(
-                R.drawable.stop, getString(R.string.stop), stopPendingIntent
-            )
+        val notification =
+            NotificationCompat.Builder(this, CHANNEL_ID).setSmallIcon(R.drawable.icon)
+                .setContentTitle(getString(R.string.notification_title))
+                .setContentText(getString(R.string.notification_text)).setOngoing(true)
+                .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+                .setContentIntent(mainPendingIntent)
+                .addAction(
+                    R.drawable.stop, getString(R.string.stop), stopPendingIntent
+                )
 
         return notification.build()
     }
@@ -204,6 +253,24 @@ class KeyService : Service() {
     private fun stopRssiPolling() {
         rssiPollingJob?.cancel()
         keyRepository.disconnectKey()
+        rssiPollingJob = null
+    }
+
+    private fun startGracePeriod() {
+        if(gracePeriodJob == null) {
+            gracePeriodJob = CoroutineScope(Dispatchers.IO).launch {
+                val gracePeriodInMillis = settings.gracePeriod * 1000.toLong()
+                delay(gracePeriodInMillis)
+                isGracePeriod = false
+                gracePeriodJob = null
+            }
+        }
+    }
+
+    private fun stopGracePeriod() {
+        gracePeriodJob?.cancel()
+        gracePeriodJob = null
+        isGracePeriod = false
     }
 
     //    TODO: Move to admin maybe?

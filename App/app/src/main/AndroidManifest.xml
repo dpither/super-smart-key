@@ -47,7 +47,7 @@
         </activity>
         <service
             android:name=".service.KeyService"
-            android:exported="false"
+            android:exported="true"
             android:foregroundServiceType="connectedDevice" />
         <receiver
             android:name=".admin.DeviceAdmin"

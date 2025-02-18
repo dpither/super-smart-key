@@ -13,12 +13,14 @@
     <string name="notification_text">Tap to open</string>
     <!--Home screen-->
     <string name="back">Back</string>
+    <string name="icon">Icon</string>
     <string name="link_key">Link Key</string>
     <string name="lock">Lock</string>
     <string name="change_key">Change Key</string>
     <string name="start">START</string>
     <string name="stop">STOP</string>
-    <string name="no_key_text">Welcome to Super Smart Key.\n\nThis app turns connected Bluetooth devices into smart keys that will automatically lock your device when outside of a configurable range.\n\nLink a key to get started.</string>
+    <string name="no_key_text">Secure your phone with a Bluetooth device.</string>
+    <string name="call_to_action">Link a key to get started.</string>
     <string name="key_dialog_title">Available Keys</string>
     <string name="key_dialog_text">Select your key</string>
     <string name="empty_key_dialog_title">No keys found</string>

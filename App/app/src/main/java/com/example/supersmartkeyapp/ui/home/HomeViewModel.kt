@@ -147,4 +147,9 @@ class HomeViewModel @Inject constructor(
             it.copy(showDeviceAdminDialog = false)
         }
     }
+
+    override fun onCleared() {
+        super.onCleared()
+        keyServiceManager.unbind()
+    }
 }

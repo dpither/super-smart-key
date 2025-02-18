@@ -15,8 +15,11 @@ import androidx.compose.animation.core.EaseIn
 import androidx.compose.animation.core.EaseOut
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.animateDp
+import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.core.updateTransition
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -25,10 +28,10 @@ import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.Canvas
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
@@ -44,6 +47,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.BiasAlignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.geometry.Offset
@@ -52,9 +56,11 @@ import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.tooling.preview.Devices
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -82,7 +88,6 @@ fun HomeScreen(
     viewModel: HomeViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
-
     val context = LocalContext.current
 
     val bluetoothPermissionState = rememberMultiplePermissionsState(
@@ -213,50 +218,111 @@ private fun HomeContent(
     onStop: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val smallIconDp = with(LocalDensity.current) {
+        MaterialTheme.typography.bodyLarge.lineHeight.toDp() * 4
+    }
+    val largeIconDp = smallIconDp * 2
+
     Box(
         modifier = modifier.fillMaxSize()
     ) {
         HorizontalDivider()
-        AnimatedVisibility(
-            visible = key == null,
-            enter = fadeIn(
-                animationSpec = tween(
-                    durationMillis = DEFAULT_ANIMATION_DURATION,
-                    easing = LinearEasing
+        val targetState = key == null
+        val transition = updateTransition(targetState = targetState, label = "icon state")
+        val rotation by transition.animateFloat(
+            transitionSpec = {
+                tween(
+                    durationMillis = DEFAULT_ANIMATION_DURATION, easing = FastOutSlowInEasing
                 )
-            ),
-            exit = fadeOut(
+            }, label = "rotation"
+        ) { state ->
+            if (state) 0f else -90f
+        }
+        val size by transition.animateDp(
+            transitionSpec = {
+                tween(
+                    durationMillis = DEFAULT_ANIMATION_DURATION, easing = FastOutSlowInEasing
+                )
+            }, label = "size"
+        ) { state ->
+            if (state) largeIconDp else smallIconDp
+        }
+
+        val targetAlignment = if (targetState) Alignment.Center else Alignment.TopStart
+        val biased = targetAlignment as BiasAlignment
+        val horizontal by animateFloatAsState(
+            targetValue = biased.horizontalBias, animationSpec = tween(
+                durationMillis = DEFAULT_ANIMATION_DURATION, easing = FastOutSlowInEasing
+            ), label = "horizontal alignment"
+        )
+        val vertical by animateFloatAsState(
+            targetValue = biased.verticalBias, animationSpec = tween(
+                durationMillis = DEFAULT_ANIMATION_DURATION, easing = FastOutSlowInEasing
+            ), label = "vertical alignment"
+        )
+        val alignment = BiasAlignment(horizontal, vertical)
+
+        Box(
+            contentAlignment = alignment, modifier = Modifier
+                .fillMaxSize()
+                .padding(16.dp)
+
+        ) {
+            Icon(
+                imageVector = ImageVector.vectorResource(R.drawable.icon),
+                contentDescription = stringResource(R.string.icon),
+                modifier = Modifier
+                    .rotate(rotation)
+                    .size(size)
+            )
+        }
+
+        AnimatedVisibility(
+            visible = key == null, enter = fadeIn(
                 animationSpec = tween(
-                    durationMillis = DEFAULT_ANIMATION_DURATION,
-                    easing = LinearEasing
+                    durationMillis = DEFAULT_ANIMATION_DURATION, easing = LinearEasing
+                )
+            ), exit = fadeOut(
+                animationSpec = tween(
+                    durationMillis = DEFAULT_ANIMATION_DURATION, easing = LinearEasing
                 )
             )
         ) {
-            Column(
-                verticalArrangement = Arrangement.Center,
+            Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(16.dp)
+                    .padding(top = 128.dp)
+                    .padding(horizontal = 16.dp),
+                contentAlignment = Alignment.TopCenter
             ) {
                 Text(
                     text = stringResource(R.string.no_key_text),
                     textAlign = TextAlign.Center,
+                    style = MaterialTheme.typography.bodyLarge
+                )
+            }
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(bottom = 128.dp)
+                    .padding(horizontal = 16.dp), contentAlignment = Alignment.BottomCenter
+            ) {
+                Text(
+                    text = stringResource(R.string.call_to_action),
+                    textAlign = TextAlign.Center,
                     style = MaterialTheme.typography.bodyLarge,
                 )
             }
+
         }
         AnimatedVisibility(
-            visible = key != null,
-            enter = fadeIn(
+            visible = key != null, enter = fadeIn(
                 animationSpec = tween(
-                    durationMillis = DEFAULT_ANIMATION_DURATION,
-                    easing = LinearEasing
+                    durationMillis = DEFAULT_ANIMATION_DURATION, easing = LinearEasing
                 )
-            ),
-            exit = fadeOut(
+            ), exit = fadeOut(
                 animationSpec = tween(
-                    durationMillis = DEFAULT_ANIMATION_DURATION,
-                    easing = LinearEasing
+                    durationMillis = DEFAULT_ANIMATION_DURATION, easing = LinearEasing
                 )
             )
         ) {
@@ -267,13 +333,19 @@ private fun HomeContent(
                     .fillMaxSize()
                     .padding(16.dp)
             ) {
-                KeyInfo(
-                    key = key,
-                    isKeyConnected = isKeyConnected
-                )
+                Row {
+                    Spacer(
+                        modifier = Modifier
+                            .padding(end = 16.dp)
+                            .size(smallIconDp)
+                    )
+                    KeyInfo(
+                        key = key, isKeyConnected = isKeyConnected
+                    )
+                }
+
                 Box(
-                    contentAlignment = Alignment.Center,
-                    modifier = Modifier.align(Alignment.Center)
+                    contentAlignment = Alignment.Center, modifier = Modifier.align(Alignment.Center)
                 ) {
                     DistanceIndicator(
                         progress = progress, size = 240.dp
@@ -397,109 +469,100 @@ private fun KeyInfo(
         stringResource(R.string.disconnected)
     }
     Column {
-        Text(text = stringResource(R.string.key_information), style = titleStyle)
+//        Name
         AnimatedContent(
-            targetState = name,
-            transitionSpec = {
+            targetState = name, transitionSpec = {
                 fadeIn(
                     animationSpec = tween(
-                        durationMillis = DEFAULT_ANIMATION_DURATION,
-                        easing = LinearEasing
+                        durationMillis = DEFAULT_ANIMATION_DURATION, easing = LinearEasing
                     )
                 ) togetherWith fadeOut(
                     animationSpec = tween(
-                        durationMillis = DEFAULT_ANIMATION_DURATION,
-                        easing = LinearEasing
+                        durationMillis = DEFAULT_ANIMATION_DURATION, easing = LinearEasing
                     )
                 )
-            },
-            label = "name animation"
+            }, label = "name animation"
         ) { targetName ->
-            Text(text = stringResource(R.string.name) + ": " + targetName, style = textStyle)
+            Row(verticalAlignment = Alignment.Bottom) {
+                Text(
+                    text = stringResource(R.string.name) + ": ",
+                    style = titleStyle)
+                Text(text = targetName, style = textStyle)
+            }
         }
+//        Address
         AnimatedContent(
-            targetState = address,
-            transitionSpec = {
+            targetState = address, transitionSpec = {
                 fadeIn(
                     animationSpec = tween(
-                        durationMillis = DEFAULT_ANIMATION_DURATION,
-                        easing = LinearEasing
+                        durationMillis = DEFAULT_ANIMATION_DURATION, easing = LinearEasing
                     )
                 ) togetherWith fadeOut(
                     animationSpec = tween(
-                        durationMillis = DEFAULT_ANIMATION_DURATION,
-                        easing = LinearEasing
+                        durationMillis = DEFAULT_ANIMATION_DURATION, easing = LinearEasing
                     )
                 )
-            },
-            label = "address animation"
+            }, label = "address animation"
         ) { targetAddress ->
-            Text(text = stringResource(R.string.address) + ": " + targetAddress, style = textStyle)
+            Row {
+                Text(text = stringResource(R.string.address) + ": ", style = titleStyle)
+                Text(text = targetAddress, style = textStyle)
+            }
         }
-
+//        Status
         AnimatedContent(
-            targetState = status,
-            transitionSpec = {
+            targetState = status, transitionSpec = {
                 fadeIn(
                     animationSpec = tween(
-                        durationMillis = DEFAULT_ANIMATION_DURATION,
-                        easing = LinearEasing
+                        durationMillis = DEFAULT_ANIMATION_DURATION, easing = LinearEasing
                     )
                 ) togetherWith fadeOut(
                     animationSpec = tween(
-                        durationMillis = DEFAULT_ANIMATION_DURATION,
-                        easing = LinearEasing
+                        durationMillis = DEFAULT_ANIMATION_DURATION, easing = LinearEasing
                     )
                 )
-            },
-            label = "status animation"
+            }, label = "status animation"
         ) { targetStatus ->
-            Text(text = stringResource(R.string.status) + ": " + targetStatus, style = textStyle)
+            Row {
+                Text(text = stringResource(R.string.status) + ": ", style = titleStyle)
+                Text(text = targetStatus, style = textStyle)
+            }
         }
-
+//        RSSI
         AnimatedVisibility(
-            visible = isKeyConnected && key?.rssi != null,
-            enter = slideInVertically(
+            visible = isKeyConnected && key?.rssi != null, enter = slideInVertically(
                 animationSpec = tween(
-                    durationMillis = DEFAULT_ANIMATION_DURATION,
-                    easing = EaseIn
+                    durationMillis = DEFAULT_ANIMATION_DURATION, easing = EaseIn
                 )
             ) + expandVertically(
                 animationSpec = tween(
-                    durationMillis = DEFAULT_ANIMATION_DURATION,
-                    easing = EaseIn
+                    durationMillis = DEFAULT_ANIMATION_DURATION, easing = EaseIn
                 )
             ) + fadeIn(
                 animationSpec = tween(
-                    durationMillis = DEFAULT_ANIMATION_DURATION,
-                    easing = LinearEasing
+                    durationMillis = DEFAULT_ANIMATION_DURATION, easing = LinearEasing
                 )
-            ),
-            exit = slideOutVertically(
+            ), exit = slideOutVertically(
                 animationSpec = tween(
-                    durationMillis = DEFAULT_ANIMATION_DURATION,
-                    easing = EaseOut
+                    durationMillis = DEFAULT_ANIMATION_DURATION, easing = EaseOut
                 )
             ) + shrinkVertically(
                 animationSpec = tween(
-                    durationMillis = DEFAULT_ANIMATION_DURATION,
-                    easing = EaseOut
+                    durationMillis = DEFAULT_ANIMATION_DURATION, easing = EaseOut
                 )
             ) + fadeOut(
                 animationSpec = tween(
-                    durationMillis = DEFAULT_ANIMATION_DURATION,
-                    easing = LinearEasing
+                    durationMillis = DEFAULT_ANIMATION_DURATION, easing = LinearEasing
                 )
             )
         ) {
             Row {
                 Text(
-                    text = stringResource(R.string.rssi) + ": ",
-                    style = textStyle
+                    text = stringResource(R.string.rssi) + ": ", style = titleStyle
                 )
+//                RSSI Ticking
                 AnimatedContent(
-                    targetState = rssi,
-                    transitionSpec = {
+                    targetState = rssi, transitionSpec = {
                         if (targetState > initialState) {
                             slideInVertically { height -> height } + fadeIn(
                                 animationSpec = tween(
@@ -525,21 +588,19 @@ private fun KeyInfo(
                                 )
                             )
                         }
-                    },
-                    label = "rssi animation"
+                    }, label = "rssi animation"
                 ) { targetRssi ->
                     Text(text = "$targetRssi", style = textStyle)
                 }
                 Text(
-                    text = " " + stringResource(R.string.rssi_threshold_units),
-                    style = textStyle
+                    text = " " + stringResource(R.string.rssi_threshold_units), style = textStyle
                 )
             }
         }
     }
 }
 
-@Preview
+@Preview(uiMode = Configuration.UI_MODE_NIGHT_YES, device = Devices.PIXEL)
 @Composable
 private fun HomeContentNoKeyPreview() {
     AppTheme {
@@ -589,9 +650,35 @@ private fun HomeContentKeyPreview() {
     }
 }
 
-@Preview(uiMode = Configuration.UI_MODE_NIGHT_YES)
+@Preview(uiMode = Configuration.UI_MODE_NIGHT_YES, device = Devices.PIXEL)
 @Composable
 private fun HomeContentKeyDisconnectedPreview() {
+    AppTheme {
+        Scaffold(
+            modifier = Modifier.fillMaxSize(),
+            topBar = { HomeTopAppBar(onSettings = {}) },
+            floatingActionButton = {
+                LinkKeyButton(isKeyConnected = false, onClick = {})
+            },
+        ) { paddingValues ->
+            HomeContent(
+                key = Key(
+                    name = "Smart Tag", address = "00:11:22:33:AA:BB", rssi = -100
+                ),
+                rssiThreshold = -100,
+                isKeyConnected = false,
+                isServiceRunning = false,
+                onStart = {},
+                onStop = {},
+                modifier = Modifier.padding(paddingValues)
+            )
+        }
+    }
+}
+
+@Preview(uiMode = Configuration.UI_MODE_NIGHT_YES, device = Devices.PIXEL_3A)
+@Composable
+private fun HomeContentKeyDisconnectedPreview2() {
     AppTheme {
         Scaffold(
             modifier = Modifier.fillMaxSize(),

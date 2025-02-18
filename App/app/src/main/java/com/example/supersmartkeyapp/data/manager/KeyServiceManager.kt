@@ -61,4 +61,12 @@ class KeyServiceManager @Inject constructor(@ApplicationContext private val cont
             context.stopService(intent)
         }
     }
+
+    fun unbind() {
+        if (bound) {
+            Log.d(TAG, "Unbinding Service")
+            context.unbindService(connection)
+            bound = false
+        }
+    }
 }

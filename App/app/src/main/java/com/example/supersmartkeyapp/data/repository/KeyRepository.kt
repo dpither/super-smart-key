@@ -9,9 +9,13 @@ import android.content.Context
 import android.util.Log
 import com.example.supersmartkeyapp.data.model.Key
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -22,7 +26,7 @@ private const val NULL_DEVICE_NAME = "Unnamed Device"
 @Singleton
 class KeyRepository @Inject constructor(@ApplicationContext private val context: Context) {
     //    TODO: Add isConnected boolean for cases where key is disconnected but service running?
-    private val _key = MutableStateFlow<Key?>(null)
+    private val _key = MutableSharedFlow<Key?>(replay = 1)
     val key: Flow<Key?> = _key
 
     private val _availableKeys = MutableStateFlow(emptyList<Key>())
@@ -47,7 +51,7 @@ class KeyRepository @Inject constructor(@ApplicationContext private val context:
     }
 
     fun connectKey(key: Key) {
-        if (_key.value != null) {
+        if (_key != null) {
             disconnectKey()
         }
         val bluetoothGattCallback = object : BluetoothGattCallback() {
@@ -58,11 +62,13 @@ class KeyRepository @Inject constructor(@ApplicationContext private val context:
                         BluetoothGatt.STATE_CONNECTED -> {
                             Log.d(TAG, "Connected to GATT server: ${gatt.device}")
                             bluetoothGatt = gatt
-                            _key.update {
-                                Key(
-                                    name = gatt.device.name ?: NULL_DEVICE_NAME,
-                                    address = gatt.device.address,
-                                    rssi = null
+                            CoroutineScope(Dispatchers.IO).launch {
+                                _key.emit(
+                                    Key(
+                                        name = gatt.device.name ?: NULL_DEVICE_NAME,
+                                        address = gatt.device.address,
+                                        rssi = null
+                                    )
                                 )
                             }
                         }
@@ -70,7 +76,9 @@ class KeyRepository @Inject constructor(@ApplicationContext private val context:
                         BluetoothGatt.STATE_DISCONNECTED -> {
                             Log.d(TAG, "Disconnected from GATT server: ${gatt.device}")
                             bluetoothGatt = null
-                            _key.update { null }
+                            CoroutineScope(Dispatchers.IO).launch {
+                                _key.emit(null)
+                            }
                         }
                     }
                 } else {
@@ -82,7 +90,10 @@ class KeyRepository @Inject constructor(@ApplicationContext private val context:
                 super.onReadRemoteRssi(gatt, rssi, status)
                 if (status == BluetoothGatt.GATT_SUCCESS) {
                     Log.d(TAG, "RSSI read success: $rssi")
-                    _key.update { it?.copy(rssi = rssi) }
+                    CoroutineScope(Dispatchers.IO).launch {
+                        val updatedKey = _key.replayCache.firstOrNull()?.copy(rssi = rssi)
+                        _key.emit(updatedKey)
+                    }
                 } else {
                     Log.e(TAG, "GATT RSSI read failed, status: $status")
                 }
@@ -96,11 +107,12 @@ class KeyRepository @Inject constructor(@ApplicationContext private val context:
     fun disconnectKey() {
         bluetoothGatt?.close()
         bluetoothGatt = null
-        _key.update { null }
+        CoroutineScope(Dispatchers.IO).launch {
+            _key.emit(null)
+        }
     }
 
     fun readRemoteRssi() {
-        Log.d(TAG, "Requesting RSSI")
         bluetoothGatt?.readRemoteRssi() ?: Log.e(TAG, "GATT null: Trying to request RSSI")
     }
 }
