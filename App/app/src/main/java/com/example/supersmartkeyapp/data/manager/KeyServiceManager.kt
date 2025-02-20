@@ -20,41 +20,30 @@ class KeyServiceManager @Inject constructor(@ApplicationContext private val cont
 
     private val connection = object : ServiceConnection {
         override fun onServiceConnected(className: ComponentName, service: IBinder) {
+            Log.d(TAG, "Service Connected")
             val binder = service as KeyService.KeyBinder
             keyService = binder.getService()
             bound = true
         }
 
         override fun onServiceDisconnected(arg0: ComponentName?) {
+            Log.d(TAG, "Service Disconnected")
             bound = false
         }
     }
 
     fun startKeyService() {
-        val intent = Intent(context, KeyService::class.java)
         if (!bound) {
-            Log.d(TAG, "Binding Service")
+            Log.d(TAG, "Binding to and starting key service")
+            val intent = Intent(context, KeyService::class.java)
             context.bindService(intent, connection, Context.BIND_AUTO_CREATE)
             context.startService(intent)
         }
     }
 
-    fun startLockService() {
-        if (bound) {
-            keyService.startLockService()
-        }
-    }
-
-
-    fun stopLockService() {
-        if (bound) {
-            keyService.stopLockService()
-        }
-    }
-
     fun stopKeyService() {
         if (bound) {
-            Log.d(TAG, "Unbinding Service")
+            Log.d(TAG, "Unbinding from and stopping key service")
             context.unbindService(connection)
             bound = false
             val intent = Intent(context, KeyService::class.java)
@@ -62,9 +51,32 @@ class KeyServiceManager @Inject constructor(@ApplicationContext private val cont
         }
     }
 
+    fun startLockService() {
+        if (bound) {
+            Log.d(TAG, "Starting lock service")
+            keyService.startLockService()
+        }
+    }
+
+
+    fun stopLockService() {
+        if (bound) {
+            Log.d(TAG, "Stopping lock service")
+            keyService.stopLockService()
+        }
+    }
+
+    fun bindToServiceIfRunning() {
+        if (!bound && KeyService.isRunning) {
+            Log.d(TAG, "Binding to service")
+            val intent = Intent(context, KeyService::class.java)
+            context.bindService(intent, connection, Context.BIND_AUTO_CREATE)
+        }
+    }
+
     fun unbind() {
         if (bound) {
-            Log.d(TAG, "Unbinding Service")
+            Log.d(TAG, "Unbinding from service")
             context.unbindService(connection)
             bound = false
         }

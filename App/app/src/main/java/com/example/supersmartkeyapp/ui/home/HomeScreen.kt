@@ -184,12 +184,11 @@ fun HomeScreen(
             })
         },
     ) { paddingValues ->
-//            TODO: utilize is iskeyconnected
         HomeContent(
             key = uiState.key,
             rssiThreshold = uiState.rssiThreshold,
-            isKeyConnected = true,
-            isServiceRunning = uiState.isServiceRunning,
+            isKeyConnected = uiState.isKeyConnected,
+            isServiceRunning = uiState.isLockServiceRunning,
             onStart = {
                 if (devicePolicyManager.isAdminActive(
                         ComponentName(
@@ -197,12 +196,12 @@ fun HomeScreen(
                         )
                     )
                 ) {
-                    viewModel.runKeyService()
+                    viewModel.startLockService()
                 } else {
                     viewModel.openDeviceAdminDialog()
                 }
             },
-            onStop = viewModel::pauseKeyService,
+            onStop = viewModel::stopLockService,
             modifier = Modifier.padding(paddingValues)
         )
     }
@@ -452,7 +451,6 @@ private fun DistanceIndicator(
     }
 }
 
-//TODO: Update
 @Composable
 private fun KeyInfo(
     key: Key?,
@@ -637,7 +635,7 @@ private fun HomeContentKeyPreview() {
         ) { paddingValues ->
             HomeContent(
                 key = Key(
-                    name = "Smart Tag", address = "00:11:22:33:AA:BB", rssi = -62
+                    name = "Smart Tag", address = "00:11:22:33:AA:BB", lastSeen = null, rssi = -62
                 ),
                 rssiThreshold = -100,
                 isKeyConnected = true,
@@ -663,7 +661,7 @@ private fun HomeContentKeyDisconnectedPreview() {
         ) { paddingValues ->
             HomeContent(
                 key = Key(
-                    name = "Smart Tag", address = "00:11:22:33:AA:BB", rssi = -100
+                    name = "Smart Tag", address = "00:11:22:33:AA:BB", lastSeen = null, rssi = -100
                 ),
                 rssiThreshold = -100,
                 isKeyConnected = false,
@@ -689,7 +687,7 @@ private fun HomeContentKeyDisconnectedPreview2() {
         ) { paddingValues ->
             HomeContent(
                 key = Key(
-                    name = "Smart Tag", address = "00:11:22:33:AA:BB", rssi = -100
+                    name = "Smart Tag", address = "00:11:22:33:AA:BB", lastSeen = null,rssi = -100
                 ),
                 rssiThreshold = -100,
                 isKeyConnected = false,

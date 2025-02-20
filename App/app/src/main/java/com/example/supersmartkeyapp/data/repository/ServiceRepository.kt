@@ -67,15 +67,15 @@ class ServiceRepository @Inject constructor(@ApplicationContext private val cont
     }
 
     /**
-     * Get the isServiceRunning flow.
+     * Get the isLockServiceRunning flow.
      */
     val isLockServiceRunningFlow: Flow<Boolean> = dataStore.data.map { preferences ->
         preferences[PreferencesKeys.IS_LOCK_SERVICE_RUNNING] ?: false
     }
 
-    suspend fun updateIsLockServiceRunning(isServiceRunning: Boolean) {
+    suspend fun updateIsLockServiceRunning(isLockServiceRunning: Boolean) {
         dataStore.edit { preferences ->
-            preferences[PreferencesKeys.IS_LOCK_SERVICE_RUNNING] = isServiceRunning
+            preferences[PreferencesKeys.IS_LOCK_SERVICE_RUNNING] = isLockServiceRunning
         }
     }
 

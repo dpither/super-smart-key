@@ -1,5 +1,7 @@
 package com.example.supersmartkeyapp.ui.home
 
+import android.util.Log
+import androidx.compose.runtime.key
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.supersmartkeyapp.data.manager.KeyServiceManager
@@ -15,7 +17,8 @@ import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 data class HomeUiState(
-    val isServiceRunning: Boolean = false,
+    val isLockServiceRunning: Boolean = false,
+    val isKeyConnected: Boolean = false,
     val key: Key? = null,
     val selectedKey: Key? = null,
     val rssi: Int? = null,
@@ -38,6 +41,7 @@ class HomeViewModel @Inject constructor(
 
     init {
         loadUiState()
+        keyServiceManager.bindToServiceIfRunning()
     }
 
     private fun loadUiState() {
@@ -48,7 +52,7 @@ class HomeViewModel @Inject constructor(
         viewModelScope.launch {
             settingsRepository.isLockServiceRunningFlow.collect { value ->
                 _uiState.update {
-                    it.copy(isServiceRunning = value)
+                    it.copy(isLockServiceRunning = value)
                 }
             }
         }
@@ -78,13 +82,21 @@ class HomeViewModel @Inject constructor(
                 }
             }
         }
+
+        viewModelScope.launch {
+            keyRepository.isConnected.collect { value ->
+                _uiState.update {
+                    it.copy(isKeyConnected = value)
+                }
+            }
+        }
     }
 
-    fun runKeyService() {
+    fun startLockService() {
         keyServiceManager.startLockService()
     }
 
-    fun pauseKeyService() {
+    fun stopLockService() {
         keyServiceManager.stopLockService()
     }
 
@@ -150,6 +162,10 @@ class HomeViewModel @Inject constructor(
 
     override fun onCleared() {
         super.onCleared()
-        keyServiceManager.unbind()
+        if (!_uiState.value.isLockServiceRunning) {
+            keyServiceManager.stopKeyService()
+        } else {
+            keyServiceManager.unbind()
+        }
     }
 }

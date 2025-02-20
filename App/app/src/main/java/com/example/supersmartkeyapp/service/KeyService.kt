@@ -69,11 +69,15 @@ class KeyService : Service(), DefaultLifecycleObserver {
     )
     private var isLockServiceRunning = false
     private var isGracePeriod = false
-    private var isAppBackground = false
+    private var isAppForeground = true
 
 
     inner class KeyBinder : Binder() {
         fun getService(): KeyService = this@KeyService
+    }
+
+    companion object {
+        var isRunning = false
     }
 
     override fun onCreate() {
@@ -82,7 +86,7 @@ class KeyService : Service(), DefaultLifecycleObserver {
         wakeReceiver = object : BroadcastReceiver() {
             override fun onReceive(context: Context?, intent: Intent?) {
                 when (intent?.action) {
-                    Intent.ACTION_USER_PRESENT -> if(isLockServiceRunning) startGracePeriod()
+                    Intent.ACTION_USER_PRESENT -> if (isLockServiceRunning) startGracePeriod()
                 }
             }
         }
@@ -90,19 +94,37 @@ class KeyService : Service(), DefaultLifecycleObserver {
             addAction(Intent.ACTION_USER_PRESENT)
         }
         registerReceiver(wakeReceiver, filter)
+        isRunning = true
+    }
+
+    override fun onDestroy() {
+        super<Service>.onDestroy()
+        ProcessLifecycleOwner.get().lifecycle.removeObserver(this)
+        unregisterReceiver(wakeReceiver)
+        stopRssiPolling()
+        stopGracePeriod()
+        if (isLockServiceRunning) {
+            updateScope.launch {
+                settingsRepository.updateIsLockServiceRunning(false)
+            }
+        }
+        collectScope.cancel()
+        Log.d(TAG, "Key service destroyed")
+        isRunning = false
     }
 
     override fun onStart(owner: LifecycleOwner) {
         super.onStop(owner)
         Log.d(TAG, "App is in the foreground")
-        isAppBackground = false
+        isAppForeground = true
+        startRssiPolling()
     }
 
-//    TODO: Prevent polling in background if service not running
+    //    TODO: Prevent polling in background if service not running
     override fun onStop(owner: LifecycleOwner) {
         super.onStop(owner)
         Log.d(TAG, "App is in the background")
-        isAppBackground = true
+        isAppForeground = false
     }
 
 
@@ -114,12 +136,17 @@ class KeyService : Service(), DefaultLifecycleObserver {
         return super.onUnbind(intent)
     }
 
+    //    TODO: USE THIS FOR SOMETHING?
+    override fun onTaskRemoved(intent: Intent) {
+        super.onTaskRemoved(intent)
+    }
+
     //    TODO: Figure out stopping service after noti stop when app is closed
 //    TODO: Figure out weird process mangement on destroy/caached process
     override fun onStartCommand(intent: Intent, flags: Int, startId: Int): Int {
         if (intent.action == ACTION_STOP_LOCK_SERVICE) {
             stopLockService()
-            if(isAppBackground) {
+            if (!isAppForeground) {
                 stopSelf()
             }
         } else {
@@ -149,21 +176,6 @@ class KeyService : Service(), DefaultLifecycleObserver {
         }
 
         return START_STICKY
-    }
-
-    override fun onDestroy() {
-        super<Service>.onDestroy()
-        ProcessLifecycleOwner.get().lifecycle.removeObserver(this)
-        unregisterReceiver(wakeReceiver)
-        stopRssiPolling()
-        stopGracePeriod()
-        if (isLockServiceRunning) {
-            updateScope.launch {
-                settingsRepository.updateIsLockServiceRunning(false)
-            }
-        }
-        collectScope.cancel()
-        Log.d(TAG, "Key service destroyed")
     }
 
     fun startLockService() {
@@ -238,7 +250,7 @@ class KeyService : Service(), DefaultLifecycleObserver {
     private fun startRssiPolling() {
         if (rssiPollingJob == null) {
             rssiPollingJob = CoroutineScope(Dispatchers.IO).launch {
-                while (isActive) {
+                while (isActive && (isLockServiceRunning || isAppForeground)) {
                     keyRepository.readRemoteRssi()
 //                Log.d(TAG, "Threshold: ${settings.rssiThreshold}")
 //                Log.d(TAG, "Grace: ${settings.gracePeriod}")
@@ -246,6 +258,7 @@ class KeyService : Service(), DefaultLifecycleObserver {
                     val pollingRateInMillis = settings.pollingRateSeconds * 1000.toLong()
                     delay(pollingRateInMillis)
                 }
+                rssiPollingJob = null
             }
         }
     }
@@ -257,7 +270,7 @@ class KeyService : Service(), DefaultLifecycleObserver {
     }
 
     private fun startGracePeriod() {
-        if(gracePeriodJob == null) {
+        if (gracePeriodJob == null) {
             gracePeriodJob = CoroutineScope(Dispatchers.IO).launch {
                 val gracePeriodInMillis = settings.gracePeriod * 1000.toLong()
                 delay(gracePeriodInMillis)

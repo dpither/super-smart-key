@@ -9,13 +9,12 @@ import android.content.Context
 import android.util.Log
 import com.example.supersmartkeyapp.data.model.Key
 import dagger.hilt.android.qualifiers.ApplicationContext
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.update
-import kotlinx.coroutines.launch
+import java.time.Instant
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -25,9 +24,11 @@ private const val NULL_DEVICE_NAME = "Unnamed Device"
 @SuppressLint("MissingPermission")
 @Singleton
 class KeyRepository @Inject constructor(@ApplicationContext private val context: Context) {
-    //    TODO: Add isConnected boolean for cases where key is disconnected but service running?
-    private val _key = MutableSharedFlow<Key?>(replay = 1)
+    private val _key = MutableStateFlow<Key?>(null)
     val key: Flow<Key?> = _key
+
+    private val _isConnected = MutableStateFlow(false)
+    val isConnected: Flow<Boolean> = _isConnected
 
     private val _availableKeys = MutableStateFlow(emptyList<Key>())
     val availableKeys: Flow<List<Key>> = _availableKeys
@@ -43,7 +44,10 @@ class KeyRepository @Inject constructor(@ApplicationContext private val context:
         bluetoothManager.getConnectedDevices(BluetoothProfile.GATT).forEach { device ->
             newList.add(
                 Key(
-                    name = device.name ?: NULL_DEVICE_NAME, address = device.address, rssi = null
+                    name = device.name ?: NULL_DEVICE_NAME,
+                    address = device.address,
+                    lastSeen = null,
+                    rssi = null
                 )
             )
         }
@@ -51,9 +55,10 @@ class KeyRepository @Inject constructor(@ApplicationContext private val context:
     }
 
     fun connectKey(key: Key) {
-        if (_key != null) {
+        if (_isConnected.value) {
             disconnectKey()
         }
+
         val bluetoothGattCallback = object : BluetoothGattCallback() {
             override fun onConnectionStateChange(gatt: BluetoothGatt, status: Int, newState: Int) {
                 super.onConnectionStateChange(gatt, status, newState)
@@ -62,23 +67,13 @@ class KeyRepository @Inject constructor(@ApplicationContext private val context:
                         BluetoothGatt.STATE_CONNECTED -> {
                             Log.d(TAG, "Connected to GATT server: ${gatt.device}")
                             bluetoothGatt = gatt
-                            CoroutineScope(Dispatchers.IO).launch {
-                                _key.emit(
-                                    Key(
-                                        name = gatt.device.name ?: NULL_DEVICE_NAME,
-                                        address = gatt.device.address,
-                                        rssi = null
-                                    )
-                                )
-                            }
+                            _isConnected.update { true }
                         }
 
                         BluetoothGatt.STATE_DISCONNECTED -> {
                             Log.d(TAG, "Disconnected from GATT server: ${gatt.device}")
                             bluetoothGatt = null
-                            CoroutineScope(Dispatchers.IO).launch {
-                                _key.emit(null)
-                            }
+                            _isConnected.update { false }
                         }
                     }
                 } else {
@@ -89,27 +84,28 @@ class KeyRepository @Inject constructor(@ApplicationContext private val context:
             override fun onReadRemoteRssi(gatt: BluetoothGatt, rssi: Int, status: Int) {
                 super.onReadRemoteRssi(gatt, rssi, status)
                 if (status == BluetoothGatt.GATT_SUCCESS) {
-                    Log.d(TAG, "RSSI read success: $rssi")
-                    CoroutineScope(Dispatchers.IO).launch {
-                        val updatedKey = _key.replayCache.firstOrNull()?.copy(rssi = rssi)
-                        _key.emit(updatedKey)
-                    }
+                    val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss").withZone(
+                        ZoneId.systemDefault())
+                    val currentTime = System.currentTimeMillis()
+                    val date = formatter.format(Instant.ofEpochMilli(currentTime))
+                    Log.d(TAG, "RSSI read success: $rssi at $date")
+                    _key.update { it?.copy(lastSeen = currentTime, rssi = rssi) }
                 } else {
                     Log.e(TAG, "GATT RSSI read failed, status: $status")
                 }
             }
         }
-//        TODO: Figure out if i should autoreconnect (probably)
+
         bluetoothAdapter.getRemoteDevice(key.address)
             .connectGatt(context, true, bluetoothGattCallback)
+        _key.update { key }
     }
 
     fun disconnectKey() {
         bluetoothGatt?.close()
         bluetoothGatt = null
-        CoroutineScope(Dispatchers.IO).launch {
-            _key.emit(null)
-        }
+        _isConnected.update { false }
+        _key.update { null }
     }
 
     fun readRemoteRssi() {
