@@ -60,6 +60,7 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Devices
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
@@ -73,6 +74,7 @@ import com.example.supersmartkeyapp.ui.theme.AppTheme
 import com.example.supersmartkeyapp.util.AvailableKeysDialog
 import com.example.supersmartkeyapp.util.DEFAULT_ANIMATION_DURATION
 import com.example.supersmartkeyapp.util.HomeTopAppBar
+import com.example.supersmartkeyapp.util.MAX_RSSI
 import com.example.supersmartkeyapp.util.PermissionRationaleDialog
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.rememberMultiplePermissionsState
@@ -175,7 +177,7 @@ fun HomeScreen(
         modifier = modifier.fillMaxSize(),
         topBar = { HomeTopAppBar(onSettings) },
         floatingActionButton = {
-            LinkKeyButton(isKeyConnected = uiState.key != null, onClick = {
+            LinkKeyButton(isKeySelected = uiState.key != null, onClick = {
                 if (bluetoothPermissionState.allPermissionsGranted) {
                     viewModel.openAvailableKeysDialog()
                 } else {
@@ -187,7 +189,6 @@ fun HomeScreen(
         HomeContent(
             key = uiState.key,
             rssiThreshold = uiState.rssiThreshold,
-            isKeyConnected = uiState.isKeyConnected,
             isServiceRunning = uiState.isLockServiceRunning,
             onStart = {
                 if (devicePolicyManager.isAdminActive(
@@ -211,7 +212,6 @@ fun HomeScreen(
 private fun HomeContent(
     key: Key?,
     rssiThreshold: Int,
-    isKeyConnected: Boolean,
     isServiceRunning: Boolean,
     onStart: () -> Unit,
     onStop: () -> Unit,
@@ -325,8 +325,8 @@ private fun HomeContent(
                 )
             )
         ) {
-            val rssi = key?.rssi ?: 0
-            val progress = min(rssi / rssiThreshold.toFloat(), 1f)
+            val progress =
+                if (key?.rssi != null) min(key.rssi / rssiThreshold.toFloat(), 1f) else 0f
             Box(
                 modifier = Modifier
                     .fillMaxSize()
@@ -339,7 +339,7 @@ private fun HomeContent(
                             .size(smallIconDp)
                     )
                     KeyInfo(
-                        key = key, isKeyConnected = isKeyConnected
+                        key = key
                     )
                 }
 
@@ -364,12 +364,12 @@ private fun HomeContent(
 
 @Composable
 private fun LinkKeyButton(
-    isKeyConnected: Boolean, onClick: () -> Unit
+    isKeySelected: Boolean, onClick: () -> Unit
 ) {
     LargeFloatingActionButton(
         onClick = onClick
     ) {
-        if (isKeyConnected) {
+        if (isKeySelected) {
             Icon(
                 imageVector = ImageVector.vectorResource(R.drawable.swap),
                 contentDescription = stringResource(R.string.change_key),
@@ -454,14 +454,14 @@ private fun DistanceIndicator(
 @Composable
 private fun KeyInfo(
     key: Key?,
-    isKeyConnected: Boolean,
 ) {
     val titleStyle = MaterialTheme.typography.titleMedium
     val textStyle = MaterialTheme.typography.bodyLarge
     val name = key?.name ?: " "
     val address = key?.address ?: " "
     val rssi = key?.rssi ?: 0
-    val status = if (isKeyConnected) {
+    val connected = key?.connected == true && key.rssi != null && key.rssi != MAX_RSSI
+    val status = if(connected) {
         stringResource(R.string.connected)
     } else {
         stringResource(R.string.disconnected)
@@ -484,8 +484,14 @@ private fun KeyInfo(
             Row(verticalAlignment = Alignment.Bottom) {
                 Text(
                     text = stringResource(R.string.name) + ": ",
-                    style = titleStyle)
-                Text(text = targetName, style = textStyle)
+                    style = titleStyle
+                )
+                Text(
+                    text = targetName,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    style = textStyle
+                )
             }
         }
 //        Address
@@ -528,7 +534,7 @@ private fun KeyInfo(
         }
 //        RSSI
         AnimatedVisibility(
-            visible = isKeyConnected && key?.rssi != null, enter = slideInVertically(
+            visible = connected, enter = slideInVertically(
                 animationSpec = tween(
                     durationMillis = DEFAULT_ANIMATION_DURATION, easing = EaseIn
                 )
@@ -606,13 +612,12 @@ private fun HomeContentNoKeyPreview() {
             modifier = Modifier.fillMaxSize(),
             topBar = { HomeTopAppBar(onSettings = {}) },
             floatingActionButton = {
-                LinkKeyButton(isKeyConnected = false, onClick = {})
+                LinkKeyButton(isKeySelected = false, onClick = {})
             },
         ) { paddingValues ->
             HomeContent(
                 key = null,
                 rssiThreshold = -70,
-                isKeyConnected = false,
                 isServiceRunning = false,
                 onStart = {},
                 onStop = {},
@@ -630,15 +635,18 @@ private fun HomeContentKeyPreview() {
             modifier = Modifier.fillMaxSize(),
             topBar = { HomeTopAppBar(onSettings = {}) },
             floatingActionButton = {
-                LinkKeyButton(isKeyConnected = true, onClick = {})
+                LinkKeyButton(isKeySelected = true, onClick = {})
             },
         ) { paddingValues ->
             HomeContent(
                 key = Key(
-                    name = "Smart Tag", address = "00:11:22:33:AA:BB", lastSeen = null, rssi = -62
+                    name = "Smart Tag",
+                    address = "00:11:22:33:AA:BB",
+                    lastSeen = null,
+                    rssi = -62,
+                    connected = true
                 ),
                 rssiThreshold = -100,
-                isKeyConnected = true,
                 isServiceRunning = false,
                 onStart = {},
                 onStop = {},
@@ -656,15 +664,18 @@ private fun HomeContentKeyDisconnectedPreview() {
             modifier = Modifier.fillMaxSize(),
             topBar = { HomeTopAppBar(onSettings = {}) },
             floatingActionButton = {
-                LinkKeyButton(isKeyConnected = false, onClick = {})
+                LinkKeyButton(isKeySelected = false, onClick = {})
             },
         ) { paddingValues ->
             HomeContent(
                 key = Key(
-                    name = "Smart Tag", address = "00:11:22:33:AA:BB", lastSeen = null, rssi = -100
+                    name = "Smart Tag",
+                    address = "00:11:22:33:AA:BB",
+                    lastSeen = null,
+                    rssi = -100,
+                    connected = false
                 ),
                 rssiThreshold = -100,
-                isKeyConnected = false,
                 isServiceRunning = false,
                 onStart = {},
                 onStop = {},
@@ -682,15 +693,18 @@ private fun HomeContentKeyDisconnectedPreview2() {
             modifier = Modifier.fillMaxSize(),
             topBar = { HomeTopAppBar(onSettings = {}) },
             floatingActionButton = {
-                LinkKeyButton(isKeyConnected = false, onClick = {})
+                LinkKeyButton(isKeySelected = false, onClick = {})
             },
         ) { paddingValues ->
             HomeContent(
                 key = Key(
-                    name = "Smart Tag", address = "00:11:22:33:AA:BB", lastSeen = null,rssi = -100
+                    name = "Smart Tag Smart Tag Smart Tag",
+                    address = "00:11:22:33:AA:BB",
+                    lastSeen = null,
+                    rssi = -100,
+                    connected = false
                 ),
                 rssiThreshold = -100,
-                isKeyConnected = false,
                 isServiceRunning = false,
                 onStart = {},
                 onStop = {},

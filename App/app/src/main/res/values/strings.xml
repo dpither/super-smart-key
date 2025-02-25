@@ -9,7 +9,7 @@
     <string name="polling_rate">Polling Rate</string>
     <string name="polling_rate_units">s</string>
     <!--Notification-->
-    <string name="notification_title">Service is running</string>
+    <string name="notification_title">Lock Service Running</string>
     <string name="notification_text">Tap to open</string>
     <!--Home screen-->
     <string name="back">Back</string>

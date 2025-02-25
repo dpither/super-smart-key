@@ -5,4 +5,5 @@ data class Key(
     val address: String,
     val lastSeen: Long?,
     val rssi: Int?,
+    val connected: Boolean,
 )

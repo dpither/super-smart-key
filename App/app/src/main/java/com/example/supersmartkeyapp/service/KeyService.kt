@@ -67,8 +67,13 @@ class KeyService : Service(), DefaultLifecycleObserver {
         gracePeriod = DEFAULT_GRACE_PERIOD,
         pollingRateSeconds = DEFAULT_POLLING_RATE
     )
+    private var isKeyConnected = false
+    private var currRssi = 0
+
+    private var isDeviceUnlocked = true
     private var isLockServiceRunning = false
     private var isGracePeriod = false
+    private var bound = false
     private var isAppForeground = true
 
 
@@ -86,7 +91,10 @@ class KeyService : Service(), DefaultLifecycleObserver {
         wakeReceiver = object : BroadcastReceiver() {
             override fun onReceive(context: Context?, intent: Intent?) {
                 when (intent?.action) {
-                    Intent.ACTION_USER_PRESENT -> if (isLockServiceRunning) startGracePeriod()
+                    Intent.ACTION_USER_PRESENT -> if (isLockServiceRunning) {
+                        startGracePeriod()
+                        isDeviceUnlocked = true
+                    }
                 }
             }
         }
@@ -95,6 +103,7 @@ class KeyService : Service(), DefaultLifecycleObserver {
         }
         registerReceiver(wakeReceiver, filter)
         isRunning = true
+        Log.d(TAG, "Key service created")
     }
 
     override fun onDestroy() {
@@ -108,45 +117,39 @@ class KeyService : Service(), DefaultLifecycleObserver {
                 settingsRepository.updateIsLockServiceRunning(false)
             }
         }
+        updateScope.launch {
+            keyRepository.disconnectKey()
+        }
         collectScope.cancel()
-        Log.d(TAG, "Key service destroyed")
         isRunning = false
+        Log.d(TAG, "Key service destroyed")
     }
 
     override fun onStart(owner: LifecycleOwner) {
         super.onStop(owner)
-        Log.d(TAG, "App is in the foreground")
         isAppForeground = true
         startRssiPolling()
     }
 
-    //    TODO: Prevent polling in background if service not running
     override fun onStop(owner: LifecycleOwner) {
         super.onStop(owner)
-        Log.d(TAG, "App is in the background")
         isAppForeground = false
     }
 
-
     override fun onBind(intent: Intent): IBinder {
+        bound = true
         return binder
     }
 
     override fun onUnbind(intent: Intent): Boolean {
+        bound = false
         return super.onUnbind(intent)
     }
 
-    //    TODO: USE THIS FOR SOMETHING?
-    override fun onTaskRemoved(intent: Intent) {
-        super.onTaskRemoved(intent)
-    }
-
-    //    TODO: Figure out stopping service after noti stop when app is closed
-//    TODO: Figure out weird process mangement on destroy/caached process
     override fun onStartCommand(intent: Intent, flags: Int, startId: Int): Int {
         if (intent.action == ACTION_STOP_LOCK_SERVICE) {
             stopLockService()
-            if (!isAppForeground) {
+            if (!bound) {
                 stopSelf()
             }
         } else {
@@ -158,18 +161,21 @@ class KeyService : Service(), DefaultLifecycleObserver {
             collectScope.launch {
                 settingsRepository.isLockServiceRunningFlow.collect { value ->
                     isLockServiceRunning = value
+                    if (isLockServiceRunning && (currRssi < settings.rssiThreshold || !isKeyConnected)) {
+                        lockDevice()
+                    }
                 }
             }
             collectScope.launch {
                 keyRepository.key.collect { value ->
                     Log.d(TAG, "RSSI: ${value?.rssi}")
                     if (value?.rssi != null && isLockServiceRunning && !isGracePeriod) {
-                        if (value.rssi < settings.rssiThreshold) {
-                            Log.d(TAG, "Locking device")
+                        if (value.rssi < settings.rssiThreshold || !value.connected) {
                             lockDevice()
-                            isGracePeriod = true
                         }
                     }
+                    isKeyConnected = value?.connected ?: false
+                    currRssi = value?.rssi ?: 0
                 }
             }
             startRssiPolling()
@@ -239,8 +245,7 @@ class KeyService : Service(), DefaultLifecycleObserver {
                 .setContentTitle(getString(R.string.notification_title))
                 .setContentText(getString(R.string.notification_text)).setOngoing(true)
                 .setPriority(NotificationCompat.PRIORITY_DEFAULT)
-                .setContentIntent(mainPendingIntent)
-                .addAction(
+                .setContentIntent(mainPendingIntent).addAction(
                     R.drawable.stop, getString(R.string.stop), stopPendingIntent
                 )
 
@@ -252,9 +257,6 @@ class KeyService : Service(), DefaultLifecycleObserver {
             rssiPollingJob = CoroutineScope(Dispatchers.IO).launch {
                 while (isActive && (isLockServiceRunning || isAppForeground)) {
                     keyRepository.readRemoteRssi()
-//                Log.d(TAG, "Threshold: ${settings.rssiThreshold}")
-//                Log.d(TAG, "Grace: ${settings.gracePeriod}")
-//                Log.d(TAG, "Polling Rate: ${settings.pollingRateSeconds}")
                     val pollingRateInMillis = settings.pollingRateSeconds * 1000.toLong()
                     delay(pollingRateInMillis)
                 }
@@ -276,6 +278,9 @@ class KeyService : Service(), DefaultLifecycleObserver {
                 delay(gracePeriodInMillis)
                 isGracePeriod = false
                 gracePeriodJob = null
+                if (isLockServiceRunning && (currRssi < settings.rssiThreshold || !isKeyConnected)) {
+                    lockDevice()
+                }
             }
         }
     }
@@ -286,15 +291,17 @@ class KeyService : Service(), DefaultLifecycleObserver {
         isGracePeriod = false
     }
 
-    //    TODO: Move to admin maybe?
     private fun lockDevice() {
         val devicePolicyManager =
             getSystemService(Context.DEVICE_POLICY_SERVICE) as DevicePolicyManager
         val componentName = ComponentName(this, DeviceAdmin::class.java)
-        if (devicePolicyManager.isAdminActive(componentName)) {
+        if (devicePolicyManager.isAdminActive(componentName) && isDeviceUnlocked) {
+            Log.d(TAG, "Locking device")
+            isDeviceUnlocked = false
+            isGracePeriod = true
             devicePolicyManager.lockNow()
         } else {
-            Log.e(TAG, "Admin permission is not active")
+            if (isDeviceUnlocked) Log.e(TAG, "ERROR LOCKING DEVICE: Admin permission is not active")
         }
     }
 }

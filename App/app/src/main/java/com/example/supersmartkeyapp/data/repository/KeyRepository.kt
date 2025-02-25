@@ -1,6 +1,7 @@
 package com.example.supersmartkeyapp.data.repository
 
 import android.annotation.SuppressLint
+import android.bluetooth.BluetoothDevice
 import android.bluetooth.BluetoothGatt
 import android.bluetooth.BluetoothGattCallback
 import android.bluetooth.BluetoothManager
@@ -8,6 +9,8 @@ import android.bluetooth.BluetoothProfile
 import android.content.Context
 import android.util.Log
 import com.example.supersmartkeyapp.data.model.Key
+import com.example.supersmartkeyapp.util.BLE_HCI_CONNECTION_TIMEOUT
+import com.example.supersmartkeyapp.util.MAX_RSSI
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -27,9 +30,6 @@ class KeyRepository @Inject constructor(@ApplicationContext private val context:
     private val _key = MutableStateFlow<Key?>(null)
     val key: Flow<Key?> = _key
 
-    private val _isConnected = MutableStateFlow(false)
-    val isConnected: Flow<Boolean> = _isConnected
-
     private val _availableKeys = MutableStateFlow(emptyList<Key>())
     val availableKeys: Flow<List<Key>> = _availableKeys
 
@@ -47,7 +47,8 @@ class KeyRepository @Inject constructor(@ApplicationContext private val context:
                     name = device.name ?: NULL_DEVICE_NAME,
                     address = device.address,
                     lastSeen = null,
-                    rssi = null
+                    rssi = null,
+                    connected = false
                 )
             )
         }
@@ -55,7 +56,7 @@ class KeyRepository @Inject constructor(@ApplicationContext private val context:
     }
 
     fun connectKey(key: Key) {
-        if (_isConnected.value) {
+        if (_key.value?.connected == true) {
             disconnectKey()
         }
 
@@ -67,44 +68,50 @@ class KeyRepository @Inject constructor(@ApplicationContext private val context:
                         BluetoothGatt.STATE_CONNECTED -> {
                             Log.d(TAG, "Connected to GATT server: ${gatt.device}")
                             bluetoothGatt = gatt
-                            _isConnected.update { true }
+                            _key.update { it?.copy(connected = true) }
                         }
 
                         BluetoothGatt.STATE_DISCONNECTED -> {
                             Log.d(TAG, "Disconnected from GATT server: ${gatt.device}")
                             bluetoothGatt = null
-                            _isConnected.update { false }
+                            _key.update { it?.copy(connected = false, rssi = MAX_RSSI) }
                         }
+                        else -> Log.e(TAG, "GATT connection newState invalid.")
                     }
                 } else {
-                    Log.e(TAG, "GATT connection state change operation failed, status: $status")
+                    when (status) {
+                        BLE_HCI_CONNECTION_TIMEOUT -> {
+                            Log.e(TAG, "Connection Timeout")
+                            _key.update { it?.copy(connected = false, rssi = MAX_RSSI) }
+                        }
+                        else -> Log.e(TAG, "GATT connection state change operation failed, status: $status")
+                    }
+
                 }
             }
 
             override fun onReadRemoteRssi(gatt: BluetoothGatt, rssi: Int, status: Int) {
                 super.onReadRemoteRssi(gatt, rssi, status)
                 if (status == BluetoothGatt.GATT_SUCCESS) {
+                    val currentTime = System.currentTimeMillis()
+                    _key.update { it?.copy(lastSeen = currentTime, rssi = rssi) }
                     val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss").withZone(
                         ZoneId.systemDefault())
-                    val currentTime = System.currentTimeMillis()
                     val date = formatter.format(Instant.ofEpochMilli(currentTime))
                     Log.d(TAG, "RSSI read success: $rssi at $date")
-                    _key.update { it?.copy(lastSeen = currentTime, rssi = rssi) }
                 } else {
                     Log.e(TAG, "GATT RSSI read failed, status: $status")
                 }
             }
         }
-
-        bluetoothAdapter.getRemoteDevice(key.address)
-            .connectGatt(context, true, bluetoothGattCallback)
         _key.update { key }
+        bluetoothAdapter.getRemoteDevice(key.address)
+            .connectGatt(context, true, bluetoothGattCallback, BluetoothDevice.TRANSPORT_LE)
     }
 
     fun disconnectKey() {
         bluetoothGatt?.close()
         bluetoothGatt = null
-        _isConnected.update { false }
         _key.update { null }
     }
 

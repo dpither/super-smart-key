@@ -1,13 +1,11 @@
 package com.example.supersmartkeyapp.ui.home
 
-import android.util.Log
-import androidx.compose.runtime.key
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.supersmartkeyapp.data.manager.KeyServiceManager
+import com.example.supersmartkeyapp.data.model.Key
 import com.example.supersmartkeyapp.data.repository.KeyRepository
 import com.example.supersmartkeyapp.data.repository.ServiceRepository
-import com.example.supersmartkeyapp.data.model.Key
 import com.example.supersmartkeyapp.util.DEFAULT_RSSI_THRESHOLD
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -79,14 +77,6 @@ class HomeViewModel @Inject constructor(
                     it.copy(
                         availableKeys = value, isLoading = false
                     )
-                }
-            }
-        }
-
-        viewModelScope.launch {
-            keyRepository.isConnected.collect { value ->
-                _uiState.update {
-                    it.copy(isKeyConnected = value)
                 }
             }
         }
