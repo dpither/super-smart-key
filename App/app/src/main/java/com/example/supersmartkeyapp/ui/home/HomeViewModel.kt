@@ -75,7 +75,7 @@ class HomeViewModel @Inject constructor(
             keyRepository.availableKeys.collect { value ->
                 _uiState.update {
                     it.copy(
-                        availableKeys = value, isLoading = false
+                        availableKeys = value.values.toList(), isLoading = false
                     )
                 }
             }

@@ -256,7 +256,7 @@ class KeyService : Service(), DefaultLifecycleObserver {
         if (rssiPollingJob == null) {
             rssiPollingJob = CoroutineScope(Dispatchers.IO).launch {
                 while (isActive && (isLockServiceRunning || isAppForeground)) {
-                    keyRepository.readRemoteRssi()
+                    keyRepository.requestRemoteRssi()
                     val pollingRateInMillis = settings.pollingRateSeconds * 1000.toLong()
                     delay(pollingRateInMillis)
                 }

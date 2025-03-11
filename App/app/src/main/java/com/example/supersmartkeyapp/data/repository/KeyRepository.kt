@@ -6,15 +6,23 @@ import android.bluetooth.BluetoothGatt
 import android.bluetooth.BluetoothGattCallback
 import android.bluetooth.BluetoothManager
 import android.bluetooth.BluetoothProfile
+import android.content.BroadcastReceiver
 import android.content.Context
+import android.content.Intent
+import android.content.IntentFilter
 import android.util.Log
+import androidx.core.content.IntentCompat
 import com.example.supersmartkeyapp.data.model.Key
 import com.example.supersmartkeyapp.util.BLE_HCI_CONNECTION_TIMEOUT
 import com.example.supersmartkeyapp.util.MAX_RSSI
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
 import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
@@ -30,29 +38,57 @@ class KeyRepository @Inject constructor(@ApplicationContext private val context:
     private val _key = MutableStateFlow<Key?>(null)
     val key: Flow<Key?> = _key
 
-    private val _availableKeys = MutableStateFlow(emptyList<Key>())
-    val availableKeys: Flow<List<Key>> = _availableKeys
+    private val _availableKeys = MutableStateFlow(hashMapOf<String, Key>())
+    val availableKeys: Flow<HashMap<String, Key>> = _availableKeys
 
     private val bluetoothManager =
         context.getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager
+    private val bluetoothAdapter = bluetoothManager.adapter
     private var bluetoothGatt: BluetoothGatt? = null
-    private var bluetoothAdapter = bluetoothManager.adapter
+
+    private val nameReceiver = object : BroadcastReceiver() {
+        override fun onReceive(context: Context?, intent: Intent?) {
+            when (intent?.action) {
+                BluetoothDevice.ACTION_NAME_CHANGED -> {
+                    val device = IntentCompat.getParcelableExtra(
+                        intent, BluetoothDevice.EXTRA_DEVICE, BluetoothDevice::class.java
+                    )
+                    Log.d(TAG, "ACTION NAME CHANGE ${device?.address}: ${device?.name}")
+                    if (_availableKeys.value.containsKey(device?.address) && device?.name != null) {
+                        _availableKeys.value = HashMap(_availableKeys.value).apply {
+                            this[device.address] = this[device.address]?.copy(name = device.name)
+                        }
+                    }
+                }
+            }
+        }
+    }
+    private val nameFilter = IntentFilter().apply {
+        addAction(BluetoothDevice.ACTION_NAME_CHANGED)
+    }
+
+    init {
+        context.registerReceiver(nameReceiver, nameFilter)
+    }
 
     fun refreshAvailableKeys() {
-        _availableKeys.update { emptyList() }
-        val newList = mutableListOf<Key>()
+        _availableKeys.update { hashMapOf() }
+
+        val newMap = hashMapOf<String, Key>()
         bluetoothManager.getConnectedDevices(BluetoothProfile.GATT).forEach { device ->
-            newList.add(
-                Key(
-                    name = device.name ?: NULL_DEVICE_NAME,
-                    address = device.address,
-                    lastSeen = null,
-                    rssi = null,
-                    connected = false
-                )
+            if (device.name == null) {
+                getDeviceName(device)
+            }
+            newMap[device.address] = Key(
+                name = device.name ?: NULL_DEVICE_NAME,
+                address = device.address,
+                lastSeen = null,
+                rssi = null,
+                connected = false
             )
         }
-        _availableKeys.update { newList }
+
+        _availableKeys.update { newMap }
     }
 
     fun connectKey(key: Key) {
@@ -61,12 +97,17 @@ class KeyRepository @Inject constructor(@ApplicationContext private val context:
         }
 
         val bluetoothGattCallback = object : BluetoothGattCallback() {
+            override fun onServicesDiscovered(gatt: BluetoothGatt?, status: Int) {
+                super.onServicesDiscovered(gatt, status)
+                Log.d(TAG, "SERVICE DISCOVERED")
+            }
+
             override fun onConnectionStateChange(gatt: BluetoothGatt, status: Int, newState: Int) {
                 super.onConnectionStateChange(gatt, status, newState)
                 if (status == BluetoothGatt.GATT_SUCCESS) {
                     when (newState) {
                         BluetoothGatt.STATE_CONNECTED -> {
-                            Log.d(TAG, "Connected to GATT server: ${gatt.device}")
+                            Log.d(TAG, "Connected to GATT server: ${gatt.device.name}")
                             bluetoothGatt = gatt
                             _key.update { it?.copy(connected = true) }
                         }
@@ -76,6 +117,7 @@ class KeyRepository @Inject constructor(@ApplicationContext private val context:
                             bluetoothGatt = null
                             _key.update { it?.copy(connected = false, rssi = MAX_RSSI) }
                         }
+
                         else -> Log.e(TAG, "GATT connection newState invalid.")
                     }
                 } else {
@@ -84,9 +126,11 @@ class KeyRepository @Inject constructor(@ApplicationContext private val context:
                             Log.e(TAG, "Connection Timeout")
                             _key.update { it?.copy(connected = false, rssi = MAX_RSSI) }
                         }
-                        else -> Log.e(TAG, "GATT connection state change operation failed, status: $status")
-                    }
 
+                        else -> Log.e(
+                            TAG, "GATT connection state change operation failed, status: $status"
+                        )
+                    }
                 }
             }
 
@@ -96,7 +140,8 @@ class KeyRepository @Inject constructor(@ApplicationContext private val context:
                     val currentTime = System.currentTimeMillis()
                     _key.update { it?.copy(lastSeen = currentTime, rssi = rssi) }
                     val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss").withZone(
-                        ZoneId.systemDefault())
+                        ZoneId.systemDefault()
+                    )
                     val date = formatter.format(Instant.ofEpochMilli(currentTime))
                     Log.d(TAG, "RSSI read success: $rssi at $date")
                 } else {
@@ -115,7 +160,21 @@ class KeyRepository @Inject constructor(@ApplicationContext private val context:
         _key.update { null }
     }
 
-    fun readRemoteRssi() {
+    fun requestRemoteRssi() {
         bluetoothGatt?.readRemoteRssi() ?: Log.e(TAG, "GATT null: Trying to request RSSI")
+    }
+
+    //    Retrieve name if null, with a single retry policy
+    private fun getDeviceName(device: BluetoothDevice) {
+        Log.d(TAG, "${device.address} name is null, performing service discovery")
+        device.fetchUuidsWithSdp()
+
+        CoroutineScope(Dispatchers.IO).launch {
+            delay(5000)
+            if (_availableKeys.value[device.address]?.name == NULL_DEVICE_NAME) {
+                Log.d(TAG, "${device.address} name is still null, retrying")
+                device.fetchUuidsWithSdp()
+            }
+        }
     }
 }
