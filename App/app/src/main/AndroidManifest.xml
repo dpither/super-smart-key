@@ -49,6 +49,7 @@
             android:name=".service.KeyService"
             android:exported="true"
             android:foregroundServiceType="connectedDevice" />
+<!--        TODO: Exported service does not require permission-->
         <receiver
             android:name=".admin.DeviceAdmin"
             android:exported="true"
