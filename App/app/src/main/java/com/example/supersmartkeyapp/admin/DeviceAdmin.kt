@@ -6,7 +6,6 @@ import android.content.Intent
 import android.util.Log
 import javax.inject.Singleton
 
-
 private const val TAG = "DEVICE_ADMIN"
 
 @Singleton

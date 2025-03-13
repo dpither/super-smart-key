@@ -70,7 +70,6 @@ class KeyService : Service(), DefaultLifecycleObserver {
     private var isKeyConnected = false
     private var currRssi = 0
 
-    private var isDeviceUnlocked = true
     private var isLockServiceRunning = false
     private var isGracePeriod = false
     private var bound = false
@@ -91,9 +90,9 @@ class KeyService : Service(), DefaultLifecycleObserver {
         wakeReceiver = object : BroadcastReceiver() {
             override fun onReceive(context: Context?, intent: Intent?) {
                 when (intent?.action) {
+//                    Broadcast when device is unlocked
                     Intent.ACTION_USER_PRESENT -> if (isLockServiceRunning) {
                         startGracePeriod()
-                        isDeviceUnlocked = true
                     }
                 }
             }
@@ -101,6 +100,7 @@ class KeyService : Service(), DefaultLifecycleObserver {
         val filter = IntentFilter().apply {
             addAction(Intent.ACTION_USER_PRESENT)
         }
+
         registerReceiver(wakeReceiver, filter)
         isRunning = true
         Log.d(TAG, "Key service created")
@@ -112,14 +112,17 @@ class KeyService : Service(), DefaultLifecycleObserver {
         unregisterReceiver(wakeReceiver)
         stopRssiPolling()
         stopGracePeriod()
+
         if (isLockServiceRunning) {
             updateScope.launch {
                 settingsRepository.updateIsLockServiceRunning(false)
             }
         }
+
         updateScope.launch {
             keyRepository.disconnectKey()
         }
+
         collectScope.cancel()
         isRunning = false
         Log.d(TAG, "Key service destroyed")
@@ -158,14 +161,18 @@ class KeyService : Service(), DefaultLifecycleObserver {
                     settings = value
                 }
             }
+
             collectScope.launch {
                 settingsRepository.isLockServiceRunningFlow.collect { value ->
                     isLockServiceRunning = value
+//                    Upon starting service, if criteria is met lock device,
+//                    rather than waiting for next read
                     if (isLockServiceRunning && (currRssi < settings.rssiThreshold || !isKeyConnected)) {
                         lockDevice()
                     }
                 }
             }
+
             collectScope.launch {
                 keyRepository.key.collect { value ->
                     Log.d(TAG, "RSSI: ${value?.rssi}")
@@ -174,6 +181,7 @@ class KeyService : Service(), DefaultLifecycleObserver {
                             lockDevice()
                         }
                     }
+
                     isKeyConnected = value?.connected ?: false
                     currRssi = value?.rssi ?: 0
                 }
@@ -212,6 +220,7 @@ class KeyService : Service(), DefaultLifecycleObserver {
                     this, SERVICE_ID, createNotification(), 0
                 )
             }
+
             updateScope.launch {
                 settingsRepository.updateIsLockServiceRunning(true)
             }
@@ -267,17 +276,20 @@ class KeyService : Service(), DefaultLifecycleObserver {
 
     private fun stopRssiPolling() {
         rssiPollingJob?.cancel()
-        keyRepository.disconnectKey()
         rssiPollingJob = null
+        keyRepository.disconnectKey()
     }
 
     private fun startGracePeriod() {
         if (gracePeriodJob == null) {
             gracePeriodJob = CoroutineScope(Dispatchers.IO).launch {
                 val gracePeriodInMillis = settings.gracePeriod * 1000.toLong()
+                Log.d(TAG, "Starting grace period")
                 delay(gracePeriodInMillis)
                 isGracePeriod = false
                 gracePeriodJob = null
+//                    Upon grace period end, if criteria is met lock device,
+//                    rather than waiting for next read
                 if (isLockServiceRunning && (currRssi < settings.rssiThreshold || !isKeyConnected)) {
                     lockDevice()
                 }
@@ -295,13 +307,13 @@ class KeyService : Service(), DefaultLifecycleObserver {
         val devicePolicyManager =
             getSystemService(Context.DEVICE_POLICY_SERVICE) as DevicePolicyManager
         val componentName = ComponentName(this, DeviceAdmin::class.java)
-        if (devicePolicyManager.isAdminActive(componentName) && isDeviceUnlocked) {
-            Log.d(TAG, "Locking device")
-            isDeviceUnlocked = false
+
+        if (devicePolicyManager.isAdminActive(componentName)) {
             isGracePeriod = true
+            Log.d(TAG, "Locking device")
             devicePolicyManager.lockNow()
         } else {
-            if (isDeviceUnlocked) Log.e(TAG, "ERROR LOCKING DEVICE: Admin permission is not active")
+            Log.e(TAG, "ERROR LOCKING DEVICE: Admin permission is not active")
         }
     }
 }

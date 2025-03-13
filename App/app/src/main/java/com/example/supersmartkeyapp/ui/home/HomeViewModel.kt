@@ -97,6 +97,7 @@ class HomeViewModel @Inject constructor(
     }
 
     fun connectKey() {
+//        Only need to try to connect when selected key is different from current key
         if (_uiState.value.selectedKey?.address != _uiState.value.key?.address) {
             keyServiceManager.stopLockService()
             keyServiceManager.startKeyService()

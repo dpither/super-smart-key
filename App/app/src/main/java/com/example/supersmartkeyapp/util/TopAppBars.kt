@@ -1,5 +1,3 @@
-@file:OptIn(ExperimentalMaterial3Api::class)
-
 package com.example.supersmartkeyapp.util
 
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -20,7 +18,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import com.example.supersmartkeyapp.R
 import com.example.supersmartkeyapp.ui.theme.AppTheme
 
-
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeTopAppBar(onSettings: () -> Unit) {
     CenterAlignedTopAppBar(title = { Text(stringResource(R.string.app_name)) }, actions = {
@@ -31,6 +29,7 @@ fun HomeTopAppBar(onSettings: () -> Unit) {
     )
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsTopAppBar(onBack: () -> Unit) {
     TopAppBar(title = { Text(stringResource(R.string.settings)) }, navigationIcon = {

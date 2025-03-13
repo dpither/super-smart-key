@@ -23,6 +23,7 @@ private object Screens {
 @Composable
 fun Navigation() {
     val navController = rememberNavController()
+
     NavHost(navController = navController,
         startDestination = Screens.HOME_SCREEN,
         enterTransition = { EnterTransition.None },
@@ -32,19 +33,14 @@ fun Navigation() {
         }
         composable(route = Screens.SETTINGS_SCREEN, enterTransition = {
             slideInHorizontally(animationSpec = tween(
-                durationMillis = DEFAULT_ANIMATION_DURATION,
-                easing = EaseIn
-            ),
-                initialOffsetX = { it })
+                durationMillis = DEFAULT_ANIMATION_DURATION, easing = EaseIn
+            ), initialOffsetX = { it })
         }, exitTransition = {
             slideOutHorizontally(animationSpec = tween(
-                durationMillis = DEFAULT_ANIMATION_DURATION,
-                easing = EaseOut
-            ),
-                targetOffsetX = { it })
+                durationMillis = DEFAULT_ANIMATION_DURATION, easing = EaseOut
+            ), targetOffsetX = { it })
         }) {
             SettingsScreen(onBack = { navController.popBackStack() })
         }
     }
 }
-

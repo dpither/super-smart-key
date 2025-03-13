@@ -46,11 +46,11 @@ fun SettingsScreen(
     viewModel: SettingsViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+
     Scaffold(
         modifier = modifier.fillMaxSize(),
         topBar = { SettingsTopAppBar(onBack) },
     ) { paddingValues ->
-
         SettingsContent(
             rssiThreshold = uiState.rssiThreshold,
             onRssiThresholdChange = viewModel::updateRssiThreshold,
@@ -81,9 +81,7 @@ private fun SettingsContent(
     isLoading: Boolean,
     modifier: Modifier = Modifier
 ) {
-    Column(
-        modifier = modifier.fillMaxSize()
-    ) {
+    Column(modifier = modifier.fillMaxSize()) {
         HorizontalDivider()
         if (isLoading) {
             LinearProgressIndicator(
@@ -93,6 +91,7 @@ private fun SettingsContent(
                     .align(Alignment.CenterHorizontally)
             )
         } else {
+//            RSSI threshold slider
             SettingsIntSlider(
                 title = stringResource(R.string.rssi_threshold),
                 units = stringResource(R.string.rssi_threshold_units),
@@ -104,6 +103,7 @@ private fun SettingsContent(
                 steps = (MAX_RSSI_THRESHOLD - MIN_RSSI_THRESHOLD) - 1,
             )
             HorizontalDivider()
+//            Grace period slider
             SettingsIntSlider(
                 title = stringResource(R.string.grace_period),
                 units = stringResource(R.string.grace_period_units),
@@ -115,6 +115,7 @@ private fun SettingsContent(
                 steps = (MAX_GRACE_PERIOD - MIN_GRACE_PERIOD) - 1,
             )
             HorizontalDivider()
+//            Polling rate slider
             SettingsIntSlider(
                 title = stringResource(R.string.polling_rate),
                 units = stringResource(R.string.polling_rate_units),
@@ -148,22 +149,17 @@ private fun SettingsIntSlider(
         activeTickColor = Color.Transparent,
         inactiveTickColor = Color.Transparent,
     )
+
     Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) {
         Row {
-            Text(
-                text = "$title: ",
-                style = titleStyle,
-            )
-            Text(
-                text = "$value $units",
-                style = textStyle,
-            )
+            Text(text = "$title: ", style = titleStyle)
+            Text(text = "$value $units", style = textStyle)
         }
-        Box(
-            contentAlignment = Alignment.Center, modifier = Modifier.fillMaxWidth()
-        ) {
+        Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxWidth()) {
             Text(
-                "$minVal", style = textStyle, modifier = Modifier.align(Alignment.CenterStart)
+                text = "$minVal",
+                style = textStyle,
+                modifier = Modifier.align(Alignment.CenterStart)
             )
             Slider(
                 value = value.toFloat(),
@@ -175,7 +171,7 @@ private fun SettingsIntSlider(
                 modifier = Modifier.width(240.dp)
             )
             Text(
-                "$maxVal", style = textStyle, modifier = Modifier.align(Alignment.CenterEnd)
+                text = "$maxVal", style = textStyle, modifier = Modifier.align(Alignment.CenterEnd)
             )
         }
     }

@@ -24,7 +24,6 @@ data class SettingsUiState(
 class SettingsViewModel @Inject constructor(
     private val settingsRepository: ServiceRepository,
 ) : ViewModel() {
-
     private val _uiState = MutableStateFlow(SettingsUiState())
     val uiState: StateFlow<SettingsUiState> = _uiState
 

@@ -35,9 +35,6 @@ class ServiceRepository @Inject constructor(@ApplicationContext private val cont
 
     private val dataStore: DataStore<Preferences> = context.dataStore
 
-    /**
-     * Get the settings flow.
-     */
     val settingsFlow: Flow<Settings> = dataStore.data.catch { exception ->
         if (exception is IOException) {
             Log.e(TAG, "Error reading settings", exception)
@@ -66,9 +63,6 @@ class ServiceRepository @Inject constructor(@ApplicationContext private val cont
         }
     }
 
-    /**
-     * Get the isLockServiceRunning flow.
-     */
     val isLockServiceRunningFlow: Flow<Boolean> = dataStore.data.map { preferences ->
         preferences[PreferencesKeys.IS_LOCK_SERVICE_RUNNING] ?: false
     }

@@ -63,7 +63,6 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Devices
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -80,8 +79,6 @@ import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.rememberMultiplePermissionsState
 import kotlin.math.min
 
-private const val TAG = "HOME_SCREEN"
-
 @OptIn(ExperimentalPermissionsApi::class)
 @Composable
 fun HomeScreen(
@@ -92,6 +89,7 @@ fun HomeScreen(
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val context = LocalContext.current
 
+//    Bluetooth permissions
     val bluetoothPermissionState = rememberMultiplePermissionsState(
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
             listOf(
@@ -124,6 +122,7 @@ fun HomeScreen(
         }
     }
 
+//    Dialog for Bluetooth permissions
     PermissionRationaleDialog(
         visible = uiState.showBluetoothPermissionDialog,
         title = bluetoothPermissionTitle,
@@ -135,6 +134,7 @@ fun HomeScreen(
         onDismiss = viewModel::closeBluetoothPermissionDialog
     )
 
+//    Device admin permissions
     val devicePolicyManager =
         context.getSystemService(Context.DEVICE_POLICY_SERVICE) as DevicePolicyManager
 
@@ -151,6 +151,7 @@ fun HomeScreen(
     val deviceAdminLauncher =
         rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) {}
 
+//    Dialog for device admin
     PermissionRationaleDialog(
         visible = uiState.showDeviceAdminDialog,
         title = stringResource(R.string.device_admin),
@@ -177,7 +178,7 @@ fun HomeScreen(
         modifier = modifier.fillMaxSize(),
         topBar = { HomeTopAppBar(onSettings) },
         floatingActionButton = {
-            LinkKeyButton(isKeySelected = uiState.key != null, onClick = {
+            LinkKeyButton(isKeyLinked = uiState.key != null, onClick = {
                 if (bluetoothPermissionState.allPermissionsGranted) {
                     viewModel.openAvailableKeysDialog()
                 } else {
@@ -192,9 +193,7 @@ fun HomeScreen(
             isServiceRunning = uiState.isLockServiceRunning,
             onStart = {
                 if (devicePolicyManager.isAdminActive(
-                        ComponentName(
-                            context, DeviceAdmin::class.java
-                        )
+                        ComponentName(context, DeviceAdmin::class.java)
                     )
                 ) {
                     viewModel.startLockService()
@@ -222,60 +221,62 @@ private fun HomeContent(
     }
     val largeIconDp = smallIconDp * 2
 
-    Box(
-        modifier = modifier.fillMaxSize()
-    ) {
+    Box(modifier = modifier.fillMaxSize()) {
         HorizontalDivider()
+//        Icon animations
         val targetState = key == null
-        val transition = updateTransition(targetState = targetState, label = "icon state")
-        val rotation by transition.animateFloat(
+        val transition = updateTransition(targetState = targetState, label = "icon transition")
+
+        val animatedRotation by transition.animateFloat(
             transitionSpec = {
                 tween(
                     durationMillis = DEFAULT_ANIMATION_DURATION, easing = FastOutSlowInEasing
                 )
-            }, label = "rotation"
+            }, label = "rotation animation"
         ) { state ->
             if (state) 0f else -90f
         }
-        val size by transition.animateDp(
+
+        val animatedSize by transition.animateDp(
             transitionSpec = {
                 tween(
                     durationMillis = DEFAULT_ANIMATION_DURATION, easing = FastOutSlowInEasing
                 )
-            }, label = "size"
+            }, label = "size animation"
         ) { state ->
             if (state) largeIconDp else smallIconDp
         }
 
         val targetAlignment = if (targetState) Alignment.Center else Alignment.TopStart
         val biased = targetAlignment as BiasAlignment
-        val horizontal by animateFloatAsState(
+        val animatedHorizontalAlignment by animateFloatAsState(
             targetValue = biased.horizontalBias, animationSpec = tween(
                 durationMillis = DEFAULT_ANIMATION_DURATION, easing = FastOutSlowInEasing
-            ), label = "horizontal alignment"
+            ), label = "horizontal alignment animation"
         )
-        val vertical by animateFloatAsState(
+        val animatedVerticalAlignment by animateFloatAsState(
             targetValue = biased.verticalBias, animationSpec = tween(
                 durationMillis = DEFAULT_ANIMATION_DURATION, easing = FastOutSlowInEasing
-            ), label = "vertical alignment"
+            ), label = "vertical alignment animation"
         )
-        val alignment = BiasAlignment(horizontal, vertical)
+        val animatedAlignment =
+            BiasAlignment(animatedHorizontalAlignment, animatedVerticalAlignment)
 
         Box(
-            contentAlignment = alignment, modifier = Modifier
+            contentAlignment = animatedAlignment, modifier = Modifier
                 .fillMaxSize()
                 .padding(16.dp)
-
         ) {
             Icon(
                 imageVector = ImageVector.vectorResource(R.drawable.icon),
                 contentDescription = stringResource(R.string.icon),
                 modifier = Modifier
-                    .rotate(rotation)
-                    .size(size)
+                    .rotate(animatedRotation)
+                    .size(animatedSize)
             )
         }
 
+//        Content when no key connected
         AnimatedVisibility(
             visible = key == null, enter = fadeIn(
                 animationSpec = tween(
@@ -314,6 +315,8 @@ private fun HomeContent(
             }
 
         }
+
+//        Content when key connected
         AnimatedVisibility(
             visible = key != null, enter = fadeIn(
                 animationSpec = tween(
@@ -327,6 +330,7 @@ private fun HomeContent(
         ) {
             val progress =
                 if (key?.rssi != null) min(key.rssi / rssiThreshold.toFloat(), 1f) else 0f
+
             Box(
                 modifier = Modifier
                     .fillMaxSize()
@@ -338,22 +342,14 @@ private fun HomeContent(
                             .padding(end = 16.dp)
                             .size(smallIconDp)
                     )
-                    KeyInfo(
-                        key = key
-                    )
+                    KeyInfo(key = key)
                 }
-
                 Box(
                     contentAlignment = Alignment.Center, modifier = Modifier.align(Alignment.Center)
                 ) {
-                    DistanceIndicator(
-                        progress = progress, size = 240.dp
-                    )
+                    DistanceIndicator(progress = progress)
                     StartStopButton(
-                        isServiceRunning = isServiceRunning,
-                        size = 200.dp,
-                        onStart = onStart,
-                        onStop = onStop
+                        isServiceRunning = isServiceRunning, onStart = onStart, onStop = onStop
                     )
                 }
 
@@ -363,13 +359,11 @@ private fun HomeContent(
 }
 
 @Composable
-private fun LinkKeyButton(
-    isKeySelected: Boolean, onClick: () -> Unit
-) {
+private fun LinkKeyButton(isKeyLinked: Boolean, onClick: () -> Unit) {
     LargeFloatingActionButton(
         onClick = onClick
     ) {
-        if (isKeySelected) {
+        if (isKeyLinked) {
             Icon(
                 imageVector = ImageVector.vectorResource(R.drawable.swap),
                 contentDescription = stringResource(R.string.change_key),
@@ -386,17 +380,18 @@ private fun LinkKeyButton(
 }
 
 @Composable
-private fun StartStopButton(
-    isServiceRunning: Boolean, size: Dp = 200.dp, onStart: () -> Unit, onStop: () -> Unit
-) {
+private fun StartStopButton(isServiceRunning: Boolean, onStart: () -> Unit, onStop: () -> Unit) {
     ElevatedButton(
         onClick = { if (isServiceRunning) onStop() else onStart() },
         colors = ButtonDefaults.elevatedButtonColors(
-            containerColor = if (isServiceRunning) MaterialTheme.colorScheme.errorContainer else MaterialTheme.colorScheme.primaryContainer,
-            contentColor = MaterialTheme.colorScheme.onPrimaryContainer
+            containerColor = if (isServiceRunning) {
+                MaterialTheme.colorScheme.errorContainer
+            } else {
+                MaterialTheme.colorScheme.primaryContainer
+            }, contentColor = MaterialTheme.colorScheme.onPrimaryContainer
         ),
         elevation = ButtonDefaults.buttonElevation(defaultElevation = 8.dp),
-        modifier = Modifier.size(size)
+        modifier = Modifier.size(200.dp)
     ) {
         Text(
             text = if (isServiceRunning) stringResource(R.string.stop) else stringResource(R.string.start),
@@ -406,21 +401,21 @@ private fun StartStopButton(
 }
 
 @Composable
-private fun DistanceIndicator(
-    progress: Float,
-    size: Dp = 240.dp,
-) {
+private fun DistanceIndicator(progress: Float) {
     val animatedProgress by animateFloatAsState(
         targetValue = progress,
         animationSpec = tween(durationMillis = 800, easing = FastOutSlowInEasing),
         label = "progress animation"
     )
-    val color =
-        if (animatedProgress == 1f) MaterialTheme.colorScheme.errorContainer else MaterialTheme.colorScheme.primaryContainer
-    Box(
-        modifier = Modifier.size(size)
-    ) {
-//        Arc code by ChatGPT
+    val color = if (animatedProgress == 1f) {
+        MaterialTheme.colorScheme.errorContainer
+    } else {
+        MaterialTheme.colorScheme.primaryContainer
+    }
+    val size = 240.dp
+
+    Box(modifier = Modifier.size(size)) {
+//        Base arc code by ChatGPT, modified to fit vision
         Canvas(modifier = Modifier.fillMaxSize()) {
             val stroke = 8.dp.toPx()
             val diameter = size.toPx()
@@ -452,20 +447,20 @@ private fun DistanceIndicator(
 }
 
 @Composable
-private fun KeyInfo(
-    key: Key?,
-) {
-    val titleStyle = MaterialTheme.typography.titleMedium
-    val textStyle = MaterialTheme.typography.bodyLarge
+private fun KeyInfo(key: Key?) {
     val name = key?.name ?: " "
     val address = key?.address ?: " "
     val rssi = key?.rssi ?: 0
     val connected = key?.connected == true && key.rssi != null && key.rssi != MAX_RSSI
-    val status = if(connected) {
+    val status = if (connected) {
         stringResource(R.string.connected)
     } else {
         stringResource(R.string.disconnected)
     }
+
+    val titleStyle = MaterialTheme.typography.titleMedium
+    val textStyle = MaterialTheme.typography.bodyLarge
+
     Column {
 //        Name
         AnimatedContent(
@@ -482,10 +477,7 @@ private fun KeyInfo(
             }, label = "name animation"
         ) { targetName ->
             Row(verticalAlignment = Alignment.Bottom) {
-                Text(
-                    text = stringResource(R.string.name) + ": ",
-                    style = titleStyle
-                )
+                Text(text = stringResource(R.string.name) + ": ", style = titleStyle)
                 Text(
                     text = targetName,
                     maxLines = 1,
@@ -561,9 +553,7 @@ private fun KeyInfo(
             )
         ) {
             Row {
-                Text(
-                    text = stringResource(R.string.rssi) + ": ", style = titleStyle
-                )
+                Text(text = stringResource(R.string.rssi) + ": ", style = titleStyle)
 //                RSSI Ticking
                 AnimatedContent(
                     targetState = rssi, transitionSpec = {
@@ -596,9 +586,7 @@ private fun KeyInfo(
                 ) { targetRssi ->
                     Text(text = "$targetRssi", style = textStyle)
                 }
-                Text(
-                    text = " " + stringResource(R.string.rssi_threshold_units), style = textStyle
-                )
+                Text(text = " " + stringResource(R.string.rssi_threshold_units), style = textStyle)
             }
         }
     }
@@ -612,7 +600,7 @@ private fun HomeContentNoKeyPreview() {
             modifier = Modifier.fillMaxSize(),
             topBar = { HomeTopAppBar(onSettings = {}) },
             floatingActionButton = {
-                LinkKeyButton(isKeySelected = false, onClick = {})
+                LinkKeyButton(isKeyLinked = false, onClick = {})
             },
         ) { paddingValues ->
             HomeContent(
@@ -635,12 +623,12 @@ private fun HomeContentKeyPreview() {
             modifier = Modifier.fillMaxSize(),
             topBar = { HomeTopAppBar(onSettings = {}) },
             floatingActionButton = {
-                LinkKeyButton(isKeySelected = true, onClick = {})
+                LinkKeyButton(isKeyLinked = true, onClick = {})
             },
         ) { paddingValues ->
             HomeContent(
                 key = Key(
-                    name = "Smart Tag",
+                    name = "Smart Tag Smart Tag Smart Tag Smart Tag",
                     address = "00:11:22:33:AA:BB",
                     lastSeen = null,
                     rssi = -62,
@@ -664,7 +652,7 @@ private fun HomeContentKeyDisconnectedPreview() {
             modifier = Modifier.fillMaxSize(),
             topBar = { HomeTopAppBar(onSettings = {}) },
             floatingActionButton = {
-                LinkKeyButton(isKeySelected = false, onClick = {})
+                LinkKeyButton(isKeyLinked = false, onClick = {})
             },
         ) { paddingValues ->
             HomeContent(
@@ -693,7 +681,7 @@ private fun HomeContentKeyDisconnectedPreview2() {
             modifier = Modifier.fillMaxSize(),
             topBar = { HomeTopAppBar(onSettings = {}) },
             floatingActionButton = {
-                LinkKeyButton(isKeySelected = false, onClick = {})
+                LinkKeyButton(isKeyLinked = false, onClick = {})
             },
         ) { paddingValues ->
             HomeContent(
