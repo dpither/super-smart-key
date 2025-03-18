@@ -165,11 +165,6 @@ class KeyService : Service(), DefaultLifecycleObserver {
             collectScope.launch {
                 settingsRepository.isLockServiceRunningFlow.collect { value ->
                     isLockServiceRunning = value
-//                    Upon starting service, if criteria is met lock device,
-//                    rather than waiting for next read
-                    if (isLockServiceRunning && (currRssi < settings.rssiThreshold || !isKeyConnected)) {
-                        lockDevice()
-                    }
                 }
             }
 
@@ -178,6 +173,7 @@ class KeyService : Service(), DefaultLifecycleObserver {
                     Log.d(TAG, "RSSI: ${value?.rssi}")
                     if (value?.rssi != null && isLockServiceRunning && !isGracePeriod) {
                         if (value.rssi < settings.rssiThreshold || !value.connected) {
+                            Log.d(TAG, "RSSI value too far, attempting lock")
                             lockDevice()
                         }
                     }
@@ -194,6 +190,12 @@ class KeyService : Service(), DefaultLifecycleObserver {
 
     fun startLockService() {
         startForeground()
+//        Upon starting service, if criteria is met lock device,
+//        rather than waiting for next read
+        if (currRssi < settings.rssiThreshold || !isKeyConnected) {
+            Log.d(TAG, "Service start attempting lock")
+            lockDevice()
+        }
     }
 
     fun stopLockService() {
@@ -286,11 +288,13 @@ class KeyService : Service(), DefaultLifecycleObserver {
                 val gracePeriodInMillis = settings.gracePeriod * 1000.toLong()
                 Log.d(TAG, "Starting grace period")
                 delay(gracePeriodInMillis)
+                Log.d(TAG, "Grace period ended")
                 isGracePeriod = false
                 gracePeriodJob = null
 //                    Upon grace period end, if criteria is met lock device,
 //                    rather than waiting for next read
                 if (isLockServiceRunning && (currRssi < settings.rssiThreshold || !isKeyConnected)) {
+                    Log.d(TAG, "Grace period end attempting lock")
                     lockDevice()
                 }
             }
