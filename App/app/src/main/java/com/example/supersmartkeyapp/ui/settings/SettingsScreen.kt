@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.LinearProgressIndicator
+import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Slider
@@ -16,16 +17,23 @@ import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.tooling.preview.PreviewScreenSizes
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.supersmartkeyapp.R
+import com.example.supersmartkeyapp.ui.SettingsTopAppBar
 import com.example.supersmartkeyapp.ui.theme.AppTheme
 import com.example.supersmartkeyapp.util.DEFAULT_GRACE_PERIOD
 import com.example.supersmartkeyapp.util.DEFAULT_POLLING_RATE
@@ -36,7 +44,6 @@ import com.example.supersmartkeyapp.util.MAX_RSSI_THRESHOLD
 import com.example.supersmartkeyapp.util.MIN_GRACE_PERIOD
 import com.example.supersmartkeyapp.util.MIN_POLLING_RATE
 import com.example.supersmartkeyapp.util.MIN_RSSI_THRESHOLD
-import com.example.supersmartkeyapp.util.SettingsTopAppBar
 import kotlin.math.roundToInt
 
 @Composable
@@ -47,23 +54,34 @@ fun SettingsScreen(
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
+    val gradientBrush = Brush.linearGradient(
+        colors = listOf(MaterialTheme.colorScheme.background, MaterialTheme.colorScheme.secondary),
+        start = Offset(0f, 0f),
+        end = Offset(Float.POSITIVE_INFINITY, Float.POSITIVE_INFINITY)
+    )
+
     Scaffold(
-        modifier = modifier.fillMaxSize(),
+        modifier = modifier
+            .fillMaxSize()
+            .drawBehind { drawRect(gradientBrush) },
+        containerColor = Color.Transparent,
         topBar = { SettingsTopAppBar(onBack) },
     ) { paddingValues ->
-        SettingsContent(
-            rssiThreshold = uiState.rssiThreshold,
-            onRssiThresholdChange = viewModel::updateRssiThreshold,
-            onRssiThresholdChangeFinished = viewModel::saveRssiThreshold,
-            gracePeriod = uiState.gracePeriod,
-            onGracePeriodChange = viewModel::updateGracePeriod,
-            onGracePeriodChangeFinished = viewModel::saveGracePeriod,
-            pollingRate = uiState.pollingRate,
-            onPollingRateChange = viewModel::updatePollingRate,
-            onPollingRateChangeFinished = viewModel::savePollingRate,
-            isLoading = uiState.isLoading,
-            modifier = Modifier.padding(paddingValues),
-        )
+        CompositionLocalProvider(LocalContentColor provides MaterialTheme.colorScheme.onBackground) {
+            SettingsContent(
+                rssiThreshold = uiState.rssiThreshold,
+                onRssiThresholdChange = viewModel::updateRssiThreshold,
+                onRssiThresholdChangeFinished = viewModel::saveRssiThreshold,
+                gracePeriod = uiState.gracePeriod,
+                onGracePeriodChange = viewModel::updateGracePeriod,
+                onGracePeriodChangeFinished = viewModel::saveGracePeriod,
+                pollingRate = uiState.pollingRate,
+                onPollingRateChange = viewModel::updatePollingRate,
+                onPollingRateChangeFinished = viewModel::savePollingRate,
+                isLoading = uiState.isLoading,
+                modifier = Modifier.padding(paddingValues),
+            )
+        }
     }
 }
 
@@ -143,8 +161,6 @@ private fun SettingsIntSlider(
     maxVal: Int,
     steps: Int
 ) {
-    val titleStyle = MaterialTheme.typography.titleMedium
-    val textStyle = MaterialTheme.typography.bodyLarge
     val colors = SliderDefaults.colors(
         activeTickColor = Color.Transparent,
         inactiveTickColor = Color.Transparent,
@@ -152,15 +168,11 @@ private fun SettingsIntSlider(
 
     Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) {
         Row {
-            Text(text = "$title: ", style = titleStyle)
-            Text(text = "$value $units", style = textStyle)
+            Text(text = "$title: ", fontWeight = FontWeight.SemiBold)
+            Text(text = "$value $units")
         }
         Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxWidth()) {
-            Text(
-                text = "$minVal",
-                style = textStyle,
-                modifier = Modifier.align(Alignment.CenterStart)
-            )
+            Text(text = "$minVal", modifier = Modifier.align(Alignment.CenterStart))
             Slider(
                 value = value.toFloat(),
                 onValueChange = { onValueChange(it.roundToInt()) },
@@ -170,14 +182,12 @@ private fun SettingsIntSlider(
                 colors = colors,
                 modifier = Modifier.width(240.dp)
             )
-            Text(
-                text = "$maxVal", style = textStyle, modifier = Modifier.align(Alignment.CenterEnd)
-            )
+            Text(text = "$maxVal", modifier = Modifier.align(Alignment.CenterEnd))
         }
     }
 }
 
-@Preview
+@PreviewScreenSizes
 @Composable
 fun SettingsContentPreview() {
     AppTheme {

@@ -1,4 +1,4 @@
-package com.example.supersmartkeyapp.util
+package com.example.supersmartkeyapp.ui
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.EaseIn
@@ -25,14 +25,18 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.Button
 import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -42,7 +46,11 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
@@ -53,6 +61,7 @@ import androidx.compose.ui.window.DialogProperties
 import com.example.supersmartkeyapp.R
 import com.example.supersmartkeyapp.data.model.Key
 import com.example.supersmartkeyapp.ui.theme.AppTheme
+import com.example.supersmartkeyapp.util.DEFAULT_ANIMATION_DURATION
 
 @Composable
 fun PermissionRationaleDialog(
@@ -63,33 +72,52 @@ fun PermissionRationaleDialog(
     onDismiss: () -> Unit,
 ) {
     CustomDialog(showDialog = visible, onDismissRequest = onDismiss) {
-        Card(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(16.dp)) {
-            Column {
+        CompositionLocalProvider(LocalContentColor provides MaterialTheme.colorScheme.onBackground) {
+            val gradientBrush = Brush.linearGradient(
+                colors = listOf(
+                    MaterialTheme.colorScheme.background, MaterialTheme.colorScheme.secondary
+                ),
+                start = Offset(0f, 0f),
+                end = Offset(Float.POSITIVE_INFINITY, Float.POSITIVE_INFINITY)
+            )
+
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .drawBehind { drawRect(gradientBrush) },
+                colors = CardDefaults.cardColors(
+                    containerColor = Color.Transparent
+                ),
+                shape = RoundedCornerShape(16.dp)
+            ) {
+                Column {
 //                Title
-                Text(
-                    text = title,
-                    style = MaterialTheme.typography.titleLarge,
-                    modifier = Modifier.padding(16.dp)
-                )
-                HorizontalDivider()
+                    Text(
+                        text = title,
+                        color = MaterialTheme.colorScheme.primary,
+                        style = MaterialTheme.typography.titleLarge,
+                        modifier = Modifier.padding(16.dp)
+                    )
+                    HorizontalDivider()
 //                Rationale
-                Text(
-                    text = rationale,
-                    style = MaterialTheme.typography.bodyLarge,
-                    modifier = Modifier
-                        .align(Alignment.CenterHorizontally)
-                        .padding(16.dp)
-                )
-                HorizontalDivider()
-                Row(modifier = Modifier.padding(16.dp)) {
+                    Text(
+                        text = rationale,
+                        style = MaterialTheme.typography.bodyLarge,
+                        modifier = Modifier
+                            .align(Alignment.CenterHorizontally)
+                            .padding(16.dp)
+                    )
+                    HorizontalDivider()
+                    Row(modifier = Modifier.padding(16.dp)) {
 //                    Cancel Button
-                    TextButton(onClick = onDismiss, modifier = Modifier.weight(1f)) {
-                        Text(text = stringResource(R.string.cancel))
-                    }
-                    Spacer(modifier = Modifier.width(16.dp))
+                        OutlinedButton(onClick = onDismiss, modifier = Modifier.weight(1f)) {
+                            Text(text = stringResource(R.string.cancel))
+                        }
+                        Spacer(modifier = Modifier.width(16.dp))
 //                    OK Button
-                    TextButton(onClick = onConfirm, modifier = Modifier.weight(1f)) {
-                        Text(text = stringResource(R.string.ok))
+                        Button(onClick = onConfirm, modifier = Modifier.weight(1f)) {
+                            Text(text = stringResource(R.string.ok))
+                        }
                     }
                 }
             }
@@ -111,69 +139,88 @@ fun AvailableKeysDialog(
     val scrollState = rememberScrollState()
 
     CustomDialog(showDialog = visible, onDismissRequest = onDismiss) {
-        Card(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(16.dp)) {
-            Column {
-//                Title
-                Column(modifier = Modifier.padding(16.dp)) {
-                    Text(
-                        text = stringResource(R.string.key_dialog_title),
-                        style = MaterialTheme.typography.titleLarge
-                    )
-                    Text(text = stringResource(R.string.key_dialog_text))
-                }
-                HorizontalDivider()
+        CompositionLocalProvider(LocalContentColor provides MaterialTheme.colorScheme.onBackground) {
+            val gradientBrush = Brush.linearGradient(
+                colors = listOf(
+                    MaterialTheme.colorScheme.background, MaterialTheme.colorScheme.secondary
+                ),
+                start = Offset(0f, 0f),
+                end = Offset(Float.POSITIVE_INFINITY, Float.POSITIVE_INFINITY)
+            )
+
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .drawBehind { drawRect(gradientBrush) },
+                colors = CardDefaults.cardColors(
+                    containerColor = Color.Transparent
+                ),
+                shape = RoundedCornerShape(16.dp)
+            ) {
                 Column {
+//                Title
+                    Column(modifier = Modifier.padding(16.dp)) {
+                        Text(
+                            text = stringResource(R.string.key_dialog_title),
+                            color = MaterialTheme.colorScheme.primary,
+                            style = MaterialTheme.typography.titleLarge
+                        )
+                        Text(text = stringResource(R.string.key_dialog_text))
+                    }
+                    HorizontalDivider()
+                    Column {
 //                    List
-                    Column(
-                        verticalArrangement = if (availableKeys.isEmpty()) Arrangement.Center
-                        else Arrangement.Top,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(240.dp)
-                            .verticalScroll(scrollState)
-                    ) {
-                        availableKeys.forEach { key ->
-                            KeyRow(name = key.name,
-                                address = key.address,
-                                selected = key.address == selectedKey?.address,
-                                onClick = { onKeySelected(key) })
-                        }
-                        if (availableKeys.isEmpty()) {
-                            Text(
-                                text = stringResource(R.string.empty_key_dialog_title),
-                                style = MaterialTheme.typography.bodyLarge,
-                                modifier = Modifier.align(Alignment.CenterHorizontally)
-                            )
-                            Text(
-                                text = stringResource(R.string.empty_key_dialog_text),
-                                style = MaterialTheme.typography.bodySmall,
-                                modifier = Modifier.align(Alignment.CenterHorizontally)
-                            )
+                        Column(
+                            verticalArrangement = if (availableKeys.isEmpty()) Arrangement.Center
+                            else Arrangement.Top,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(240.dp)
+                                .verticalScroll(scrollState)
+                        ) {
+                            availableKeys.forEach { key ->
+                                KeyRow(name = key.name,
+                                    address = key.address,
+                                    selected = key.address == selectedKey?.address,
+                                    onClick = { onKeySelected(key) })
+                            }
+                            if (availableKeys.isEmpty()) {
+                                Text(
+                                    text = stringResource(R.string.empty_key_dialog_title),
+                                    style = MaterialTheme.typography.bodyLarge,
+                                    modifier = Modifier.align(Alignment.CenterHorizontally)
+                                )
+                                Text(
+                                    text = stringResource(R.string.empty_key_dialog_text),
+                                    style = MaterialTheme.typography.bodySmall,
+                                    modifier = Modifier.align(Alignment.CenterHorizontally)
+                                )
+                            }
                         }
                     }
-                }
-                HorizontalDivider()
-                Row(modifier = Modifier.padding(16.dp)) {
+                    HorizontalDivider()
+                    Row(modifier = Modifier.padding(16.dp)) {
 //                    Cancel Button
-                    TextButton(onClick = onDismiss, modifier = Modifier.weight(1f)) {
-                        Text(text = stringResource(R.string.cancel))
-                    }
-                    Spacer(modifier = Modifier.width(16.dp))
-                    if (selectedKey != null && selectedKey.address == currentKey?.address) {
-//                        If selected key is the current key Disconnect Button
-                        TextButton(onClick = {
-                            onDisconnect()
-                            onDismiss()
-                        }, modifier = Modifier.weight(1f)) {
-                            Text(text = stringResource(R.string.disconnect))
+                        OutlinedButton(onClick = onDismiss, modifier = Modifier.weight(1f)) {
+                            Text(text = stringResource(R.string.cancel))
                         }
-                    } else {
+                        Spacer(modifier = Modifier.width(16.dp))
+                        if (selectedKey != null && selectedKey.address == currentKey?.address) {
+//                        If selected key is the current key Disconnect Button
+                            Button(onClick = {
+                                onDisconnect()
+                                onDismiss()
+                            }, modifier = Modifier.weight(1f)) {
+                                Text(text = stringResource(R.string.disconnect))
+                            }
+                        } else {
 //                        Else Connected Button, enabled only if a key selected
-                        TextButton(enabled = selectedKey != null, onClick = {
-                            onConnect()
-                            onDismiss()
-                        }, modifier = Modifier.weight(1f)) {
-                            Text(text = stringResource(R.string.connect))
+                            Button(enabled = selectedKey != null, onClick = {
+                                onConnect()
+                                onDismiss()
+                            }, modifier = Modifier.weight(1f)) {
+                                Text(text = stringResource(R.string.connect))
+                            }
                         }
                     }
                 }
@@ -205,7 +252,7 @@ private fun KeyRow(
                 style = MaterialTheme.typography.bodyLarge
             )
             Text(
-                text = stringResource(R.string.address) + ": $address",
+                text = address,
                 style = MaterialTheme.typography.bodySmall,
             )
         }

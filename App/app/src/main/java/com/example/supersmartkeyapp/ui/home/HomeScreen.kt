@@ -5,7 +5,6 @@ import android.app.admin.DevicePolicyManager
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
-import android.content.res.Configuration
 import android.os.Build
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -41,17 +40,22 @@ import androidx.compose.material3.ElevatedButton
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LargeFloatingActionButton
+import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.BiasAlignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -59,22 +63,24 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.res.vectorResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Devices
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.tooling.preview.PreviewScreenSizes
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.supersmartkeyapp.R
 import com.example.supersmartkeyapp.admin.DeviceAdmin
 import com.example.supersmartkeyapp.data.model.Key
+import com.example.supersmartkeyapp.ui.AvailableKeysDialog
+import com.example.supersmartkeyapp.ui.HomeTopAppBar
+import com.example.supersmartkeyapp.ui.PermissionRationaleDialog
 import com.example.supersmartkeyapp.ui.theme.AppTheme
-import com.example.supersmartkeyapp.util.AvailableKeysDialog
 import com.example.supersmartkeyapp.util.DEFAULT_ANIMATION_DURATION
-import com.example.supersmartkeyapp.util.HomeTopAppBar
 import com.example.supersmartkeyapp.util.MAX_RSSI
-import com.example.supersmartkeyapp.util.PermissionRationaleDialog
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.rememberMultiplePermissionsState
 import kotlin.math.min
@@ -174,8 +180,17 @@ fun HomeScreen(
         onDisconnect = viewModel::disconnectKey
     )
 
+    val gradientBrush = Brush.linearGradient(
+        colors = listOf(MaterialTheme.colorScheme.background, MaterialTheme.colorScheme.secondary),
+        start = Offset(Float.POSITIVE_INFINITY, 0f),
+        end = Offset(0f, Float.POSITIVE_INFINITY)
+    )
+
     Scaffold(
-        modifier = modifier.fillMaxSize(),
+        modifier = modifier
+            .fillMaxSize()
+            .drawBehind { drawRect(gradientBrush) },
+        containerColor = Color.Transparent,
         topBar = { HomeTopAppBar(onSettings) },
         floatingActionButton = {
             LinkKeyButton(isKeyLinked = uiState.key != null, onClick = {
@@ -187,23 +202,25 @@ fun HomeScreen(
             })
         },
     ) { paddingValues ->
-        HomeContent(
-            key = uiState.key,
-            rssiThreshold = uiState.rssiThreshold,
-            isServiceRunning = uiState.isLockServiceRunning,
-            onStart = {
-                if (devicePolicyManager.isAdminActive(
-                        ComponentName(context, DeviceAdmin::class.java)
-                    )
-                ) {
-                    viewModel.startLockService()
-                } else {
-                    viewModel.openDeviceAdminDialog()
-                }
-            },
-            onStop = viewModel::stopLockService,
-            modifier = Modifier.padding(paddingValues)
-        )
+        CompositionLocalProvider(LocalContentColor provides MaterialTheme.colorScheme.onBackground) {
+            HomeContent(
+                key = uiState.key,
+                rssiThreshold = uiState.rssiThreshold,
+                isServiceRunning = uiState.isLockServiceRunning,
+                onStart = {
+                    if (devicePolicyManager.isAdminActive(
+                            ComponentName(context, DeviceAdmin::class.java)
+                        )
+                    ) {
+                        viewModel.startLockService()
+                    } else {
+                        viewModel.openDeviceAdminDialog()
+                    }
+                },
+                onStop = viewModel::stopLockService,
+                modifier = Modifier.padding(paddingValues)
+            )
+        }
     }
 }
 
@@ -270,6 +287,7 @@ private fun HomeContent(
             Icon(
                 imageVector = ImageVector.vectorResource(R.drawable.icon),
                 contentDescription = stringResource(R.string.icon),
+                tint = MaterialTheme.colorScheme.primaryContainer,
                 modifier = Modifier
                     .rotate(animatedRotation)
                     .size(animatedSize)
@@ -387,10 +405,14 @@ private fun StartStopButton(isServiceRunning: Boolean, onStart: () -> Unit, onSt
             containerColor = if (isServiceRunning) {
                 MaterialTheme.colorScheme.errorContainer
             } else {
-                MaterialTheme.colorScheme.primaryContainer
-            }, contentColor = MaterialTheme.colorScheme.onPrimaryContainer
+                MaterialTheme.colorScheme.tertiaryContainer
+            }, contentColor = if (isServiceRunning) {
+                MaterialTheme.colorScheme.onErrorContainer
+            } else {
+                MaterialTheme.colorScheme.onTertiaryContainer
+            }
         ),
-        elevation = ButtonDefaults.buttonElevation(defaultElevation = 8.dp),
+        elevation = ButtonDefaults.buttonElevation(defaultElevation = 12.dp),
         modifier = Modifier.size(200.dp)
     ) {
         Text(
@@ -410,7 +432,7 @@ private fun DistanceIndicator(progress: Float) {
     val color = if (animatedProgress == 1f) {
         MaterialTheme.colorScheme.errorContainer
     } else {
-        MaterialTheme.colorScheme.primaryContainer
+        MaterialTheme.colorScheme.tertiaryContainer
     }
     val size = 240.dp
 
@@ -458,8 +480,7 @@ private fun KeyInfo(key: Key?) {
         stringResource(R.string.disconnected)
     }
 
-    val titleStyle = MaterialTheme.typography.titleMedium
-    val textStyle = MaterialTheme.typography.bodyLarge
+    val titleWeight = FontWeight.SemiBold
 
     Column {
 //        Name
@@ -477,13 +498,8 @@ private fun KeyInfo(key: Key?) {
             }, label = "name animation"
         ) { targetName ->
             Row(verticalAlignment = Alignment.Bottom) {
-                Text(text = stringResource(R.string.name) + ": ", style = titleStyle)
-                Text(
-                    text = targetName,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                    style = textStyle
-                )
+                Text(text = stringResource(R.string.name) + ": ", fontWeight = titleWeight)
+                Text(text = targetName, maxLines = 1, overflow = TextOverflow.Ellipsis)
             }
         }
 //        Address
@@ -501,8 +517,8 @@ private fun KeyInfo(key: Key?) {
             }, label = "address animation"
         ) { targetAddress ->
             Row {
-                Text(text = stringResource(R.string.address) + ": ", style = titleStyle)
-                Text(text = targetAddress, style = textStyle)
+                Text(text = stringResource(R.string.address) + ": ", fontWeight = titleWeight)
+                Text(text = targetAddress)
             }
         }
 //        Status
@@ -520,8 +536,8 @@ private fun KeyInfo(key: Key?) {
             }, label = "status animation"
         ) { targetStatus ->
             Row {
-                Text(text = stringResource(R.string.status) + ": ", style = titleStyle)
-                Text(text = targetStatus, style = textStyle)
+                Text(text = stringResource(R.string.status) + ": ", fontWeight = titleWeight)
+                Text(text = targetStatus)
             }
         }
 //        RSSI
@@ -553,7 +569,7 @@ private fun KeyInfo(key: Key?) {
             )
         ) {
             Row {
-                Text(text = stringResource(R.string.rssi) + ": ", style = titleStyle)
+                Text(text = stringResource(R.string.rssi) + ": ", fontWeight = titleWeight)
 //                RSSI Ticking
                 AnimatedContent(
                     targetState = rssi, transitionSpec = {
@@ -584,15 +600,15 @@ private fun KeyInfo(key: Key?) {
                         }
                     }, label = "rssi animation"
                 ) { targetRssi ->
-                    Text(text = "$targetRssi", style = textStyle)
+                    Text(text = "$targetRssi")
                 }
-                Text(text = " " + stringResource(R.string.rssi_threshold_units), style = textStyle)
+                Text(text = " " + stringResource(R.string.rssi_threshold_units))
             }
         }
     }
 }
 
-@Preview(uiMode = Configuration.UI_MODE_NIGHT_YES, device = Devices.PIXEL)
+@PreviewScreenSizes
 @Composable
 private fun HomeContentNoKeyPreview() {
     AppTheme {
@@ -615,9 +631,9 @@ private fun HomeContentNoKeyPreview() {
     }
 }
 
-@Preview
+@Preview(device = Devices.PIXEL)
 @Composable
-private fun HomeContentKeyPreview() {
+private fun HomeContentKeyConnectedPreview() {
     AppTheme {
         Scaffold(
             modifier = Modifier.fillMaxSize(),
@@ -644,9 +660,9 @@ private fun HomeContentKeyPreview() {
     }
 }
 
-@Preview(uiMode = Configuration.UI_MODE_NIGHT_YES, device = Devices.PIXEL)
+@Preview(device = Devices.PIXEL)
 @Composable
-private fun HomeContentKeyDisconnectedPreview() {
+private fun HomeContentServiceRunningPreview() {
     AppTheme {
         Scaffold(
             modifier = Modifier.fillMaxSize(),
@@ -661,10 +677,10 @@ private fun HomeContentKeyDisconnectedPreview() {
                     address = "00:11:22:33:AA:BB",
                     lastSeen = null,
                     rssi = -100,
-                    connected = false
+                    connected = true
                 ),
                 rssiThreshold = -100,
-                isServiceRunning = false,
+                isServiceRunning = true,
                 onStart = {},
                 onStop = {},
                 modifier = Modifier.padding(paddingValues)
@@ -673,15 +689,15 @@ private fun HomeContentKeyDisconnectedPreview() {
     }
 }
 
-@Preview(uiMode = Configuration.UI_MODE_NIGHT_YES, device = Devices.PIXEL_3A)
+@PreviewScreenSizes
 @Composable
-private fun HomeContentKeyDisconnectedPreview2() {
+private fun HomeContentPreviewScreens() {
     AppTheme {
         Scaffold(
             modifier = Modifier.fillMaxSize(),
             topBar = { HomeTopAppBar(onSettings = {}) },
             floatingActionButton = {
-                LinkKeyButton(isKeyLinked = false, onClick = {})
+                LinkKeyButton(isKeyLinked = true, onClick = {})
             },
         ) { paddingValues ->
             HomeContent(
@@ -690,7 +706,7 @@ private fun HomeContentKeyDisconnectedPreview2() {
                     address = "00:11:22:33:AA:BB",
                     lastSeen = null,
                     rssi = -100,
-                    connected = false
+                    connected = true
                 ),
                 rssiThreshold = -100,
                 isServiceRunning = false,
