@@ -5,6 +5,7 @@ import android.app.admin.DevicePolicyManager
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
+import android.content.res.Configuration
 import android.os.Build
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -27,11 +28,13 @@ import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -59,6 +62,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
@@ -306,32 +310,23 @@ private fun HomeContent(
                 )
             )
         ) {
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(top = 128.dp)
-                    .padding(horizontal = 16.dp),
-                contentAlignment = Alignment.TopCenter
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center,
+                modifier = Modifier.fillMaxSize()
             ) {
                 Text(
                     text = stringResource(R.string.no_key_text),
                     textAlign = TextAlign.Center,
                     style = MaterialTheme.typography.bodyLarge
                 )
-            }
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(bottom = 128.dp)
-                    .padding(horizontal = 16.dp), contentAlignment = Alignment.BottomCenter
-            ) {
+                Spacer(modifier = Modifier.size(largeIconDp + 32.dp))
                 Text(
                     text = stringResource(R.string.call_to_action),
                     textAlign = TextAlign.Center,
                     style = MaterialTheme.typography.bodyLarge,
                 )
             }
-
         }
 
 //        Content when key connected
@@ -354,14 +349,33 @@ private fun HomeContent(
                     .fillMaxSize()
                     .padding(16.dp)
             ) {
-                Row {
-                    Spacer(
-                        modifier = Modifier
-                            .padding(end = 16.dp)
-                            .size(smallIconDp)
-                    )
-                    KeyInfo(key = key)
+                val isLandscape =
+                    LocalConfiguration.current.orientation == Configuration.ORIENTATION_LANDSCAPE
+
+                if (isLandscape) {
+                    Row {
+                        Column(
+                            modifier = Modifier
+                                .weight(1f)
+                                .padding(end = 16.dp)
+                        ) {
+                            Spacer(modifier = Modifier.size(smallIconDp))
+                            KeyInfo(key = key)
+                        }
+                        Spacer(modifier = Modifier.size(200.dp))
+                        Spacer(modifier = Modifier.weight(1f))
+                    }
+                } else {
+                    Row {
+                        Spacer(
+                            modifier = Modifier
+                                .padding(end = 16.dp)
+                                .size(smallIconDp)
+                        )
+                        KeyInfo(key = key)
+                    }
                 }
+
                 Box(
                     contentAlignment = Alignment.Center, modifier = Modifier.align(Alignment.Center)
                 ) {
@@ -378,8 +392,11 @@ private fun HomeContent(
 
 @Composable
 private fun LinkKeyButton(isKeyLinked: Boolean, onClick: () -> Unit) {
+    val isLandscape = LocalConfiguration.current.orientation == Configuration.ORIENTATION_LANDSCAPE
+
     LargeFloatingActionButton(
-        onClick = onClick
+        onClick = onClick,
+        modifier = if (isLandscape) Modifier.navigationBarsPadding() else Modifier
     ) {
         if (isKeyLinked) {
             Icon(
@@ -413,7 +430,7 @@ private fun StartStopButton(isServiceRunning: Boolean, onStart: () -> Unit, onSt
             }
         ),
         elevation = ButtonDefaults.buttonElevation(defaultElevation = 12.dp),
-        modifier = Modifier.size(200.dp)
+        modifier = Modifier.size(160.dp)
     ) {
         Text(
             text = if (isServiceRunning) stringResource(R.string.stop) else stringResource(R.string.start),
@@ -434,7 +451,7 @@ private fun DistanceIndicator(progress: Float) {
     } else {
         MaterialTheme.colorScheme.tertiaryContainer
     }
-    val size = 240.dp
+    val size = 200.dp
 
     Box(modifier = Modifier.size(size)) {
 //        Base arc code by ChatGPT, modified to fit vision
@@ -702,7 +719,7 @@ private fun HomeContentPreviewScreens() {
         ) { paddingValues ->
             HomeContent(
                 key = Key(
-                    name = "Smart Tag Smart Tag Smart Tag",
+                    name = "Smart Tag Smart Tag Smart Tag Smart Tag Smart Tag Smart Tag",
                     address = "00:11:22:33:AA:BB",
                     lastSeen = null,
                     rssi = -100,

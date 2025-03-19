@@ -1,6 +1,5 @@
 package com.example.supersmartkeyapp.ui.settings
 
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
@@ -27,6 +26,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.tooling.preview.PreviewScreenSizes
 import androidx.compose.ui.unit.dp
@@ -171,8 +171,9 @@ private fun SettingsIntSlider(
             Text(text = "$title: ", fontWeight = FontWeight.SemiBold)
             Text(text = "$value $units")
         }
-        Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxWidth()) {
-            Text(text = "$minVal", modifier = Modifier.align(Alignment.CenterStart))
+        val labelWidth = 48.dp
+        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
+            Text(text = "$minVal", modifier = Modifier.width(labelWidth))
             Slider(
                 value = value.toFloat(),
                 onValueChange = { onValueChange(it.roundToInt()) },
@@ -180,9 +181,9 @@ private fun SettingsIntSlider(
                 valueRange = minVal.toFloat()..maxVal.toFloat(),
                 steps = steps,
                 colors = colors,
-                modifier = Modifier.width(240.dp)
+                modifier = Modifier.weight(1f)
             )
-            Text(text = "$maxVal", modifier = Modifier.align(Alignment.CenterEnd))
+            Text(text = "$maxVal", textAlign = TextAlign.End, modifier = Modifier.width(labelWidth))
         }
     }
 }

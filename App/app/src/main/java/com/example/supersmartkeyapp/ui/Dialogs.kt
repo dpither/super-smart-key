@@ -22,9 +22,9 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -136,8 +136,6 @@ fun AvailableKeysDialog(
     onDisconnect: () -> Unit,
     onDismiss: () -> Unit
 ) {
-    val scrollState = rememberScrollState()
-
     CustomDialog(showDialog = visible, onDismissRequest = onDismiss) {
         CompositionLocalProvider(LocalContentColor provides MaterialTheme.colorScheme.onBackground) {
             val gradientBrush = Brush.linearGradient(
@@ -157,7 +155,11 @@ fun AvailableKeysDialog(
                 ),
                 shape = RoundedCornerShape(16.dp)
             ) {
-                Column {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(300.dp)
+                ) {
 //                Title
                     Column(modifier = Modifier.padding(16.dp)) {
                         Text(
@@ -167,38 +169,42 @@ fun AvailableKeysDialog(
                         )
                         Text(text = stringResource(R.string.key_dialog_text))
                     }
+
                     HorizontalDivider()
-                    Column {
 //                    List
+                    if (availableKeys.isEmpty()) {
                         Column(
-                            verticalArrangement = if (availableKeys.isEmpty()) Arrangement.Center
-                            else Arrangement.Top,
+                            verticalArrangement = Arrangement.Center,
+                            horizontalAlignment = Alignment.CenterHorizontally,
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .height(240.dp)
-                                .verticalScroll(scrollState)
+                                .weight(1f)
                         ) {
-                            availableKeys.forEach { key ->
+                            Text(
+                                text = stringResource(R.string.empty_key_dialog_title),
+                                style = MaterialTheme.typography.bodyLarge,
+                            )
+                            Text(
+                                text = stringResource(R.string.empty_key_dialog_text),
+                                style = MaterialTheme.typography.bodySmall,
+                            )
+                        }
+                    } else {
+                        LazyColumn(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .weight(1f)
+                        ) {
+                            items(availableKeys) { key ->
                                 KeyRow(name = key.name,
                                     address = key.address,
                                     selected = key.address == selectedKey?.address,
                                     onClick = { onKeySelected(key) })
                             }
-                            if (availableKeys.isEmpty()) {
-                                Text(
-                                    text = stringResource(R.string.empty_key_dialog_title),
-                                    style = MaterialTheme.typography.bodyLarge,
-                                    modifier = Modifier.align(Alignment.CenterHorizontally)
-                                )
-                                Text(
-                                    text = stringResource(R.string.empty_key_dialog_text),
-                                    style = MaterialTheme.typography.bodySmall,
-                                    modifier = Modifier.align(Alignment.CenterHorizontally)
-                                )
-                            }
                         }
                     }
                     HorizontalDivider()
+
                     Row(modifier = Modifier.padding(16.dp)) {
 //                    Cancel Button
                         OutlinedButton(onClick = onDismiss, modifier = Modifier.weight(1f)) {
@@ -301,6 +307,7 @@ private fun CustomDialog(
                 ) {
                     Box(contentAlignment = Alignment.Center,
                         modifier = Modifier
+                            .padding(16.dp)
                             .pointerInput(Unit) { detectTapGestures { } }
                             .shadow(8.dp, shape = RoundedCornerShape(16.dp))
                             .width(300.dp)
@@ -336,9 +343,35 @@ private fun PermissionRationaleDialogPreview() {
 
 @Preview
 @Composable
-private fun AvailableKeysDialogPreview() {
+private fun AvailableKeysDialogEmptyPreview() {
     AppTheme {
         AvailableKeysDialog(availableKeys = emptyList(),
+            visible = true,
+            selectedKey = null,
+            currentKey = null,
+            onDismiss = {},
+            onKeySelected = {},
+            onConnect = {},
+            onDisconnect = {})
+    }
+}
+
+@Preview
+@Composable
+private fun AvailableKeysDialogPreview() {
+    val availableKeys = listOf(
+        Key("Smart Tag2", "00:11:22:AA:BB:CD", null, null, false),
+        Key("Smart Tag2", "00:11:22:AA:BB:CE", null, null, false),
+        Key("Smart Tag2", "00:11:22:AA:BB:CF", null, null, false),
+        Key("Smart Tag2", "00:11:22:AA:BB:CG", null, null, false),
+        Key("Smart Tag2", "00:11:22:AA:BB:CH", null, null, false),
+        Key("Smart Tag2", "00:11:22:AA:BB:CI", null, null, false),
+        Key("Smart Tag2", "00:11:22:AA:BB:CJ", null, null, false),
+        Key("Smart Tag2", "00:11:22:AA:BB:CK", null, null, false),
+        Key("Smart Tag2", "00:11:22:AA:BB:CL", null, null, false)
+    )
+    AppTheme {
+        AvailableKeysDialog(availableKeys = availableKeys,
             visible = true,
             selectedKey = null,
             currentKey = null,

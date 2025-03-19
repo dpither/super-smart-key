@@ -1,7 +1,6 @@
 package com.example.supersmartkeyapp
 
 import android.graphics.Color.TRANSPARENT
-import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.SystemBarStyle
@@ -19,8 +18,10 @@ class SuperSmartKeyActivity : ComponentActivity() {
         val transparentStyle = SystemBarStyle.light(scrim = TRANSPARENT, darkScrim = TRANSPARENT)
         enableEdgeToEdge(navigationBarStyle = transparentStyle)
 
-        WindowCompat.getInsetsController(window, window.decorView).isAppearanceLightStatusBars = false
-        WindowCompat.getInsetsController(window, window.decorView).isAppearanceLightNavigationBars = false
+        WindowCompat.getInsetsController(window, window.decorView).isAppearanceLightStatusBars =
+            false
+        WindowCompat.getInsetsController(window, window.decorView).isAppearanceLightNavigationBars =
+            false
 
         setContent {
             AppTheme {
