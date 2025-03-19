@@ -158,7 +158,7 @@ fun AvailableKeysDialog(
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(300.dp)
+                        .height(400.dp)
                 ) {
 //                Title
                     Column(modifier = Modifier.padding(16.dp)) {
@@ -278,7 +278,6 @@ private fun CustomDialog(
     if (showAnimatedDialog) {
         Dialog(
             onDismissRequest = onDismissRequest,
-            properties = DialogProperties(usePlatformDefaultWidth = false)
         ) {
             Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) {
                 var animateIn by remember { mutableStateOf(false) }
