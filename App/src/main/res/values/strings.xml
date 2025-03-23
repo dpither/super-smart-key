@@ -27,7 +27,6 @@
     <string name="empty_key_dialog_text">Try connecting a Bluetooth device</string>
     <string name="address">Address</string>
     <string name="name">Name</string>
-    <string name="key_information">Key Information</string>
     <string name="status">Status</string>
     <string name="connect">Connect</string>
     <string name="connected">Connected</string>
