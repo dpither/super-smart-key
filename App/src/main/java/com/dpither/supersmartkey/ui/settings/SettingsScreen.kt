@@ -120,7 +120,7 @@ private fun SettingsContent(
                 maxVal = MAX_RSSI_THRESHOLD,
                 steps = (MAX_RSSI_THRESHOLD - MIN_RSSI_THRESHOLD) - 1,
             )
-            HorizontalDivider()
+//            HorizontalDivider()
 //            Grace period slider
             SettingsIntSlider(
                 title = stringResource(R.string.grace_period),
@@ -132,7 +132,7 @@ private fun SettingsContent(
                 maxVal = MAX_GRACE_PERIOD,
                 steps = (MAX_GRACE_PERIOD - MIN_GRACE_PERIOD) - 1,
             )
-            HorizontalDivider()
+//            HorizontalDivider()
 //            Polling rate slider
             SettingsIntSlider(
                 title = stringResource(R.string.polling_rate),
@@ -144,7 +144,7 @@ private fun SettingsContent(
                 maxVal = MAX_POLLING_RATE,
                 steps = (MAX_POLLING_RATE - MIN_POLLING_RATE) - 1,
             )
-            HorizontalDivider()
+//            HorizontalDivider()
         }
 
     }
@@ -166,7 +166,7 @@ private fun SettingsIntSlider(
         inactiveTickColor = Color.Transparent,
     )
 
-    Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) {
+    Column(modifier = Modifier.padding(horizontal = 16.dp).padding(top = 16.dp)) {
         Row {
             Text(text = "$title: ", fontWeight = FontWeight.SemiBold)
             Text(text = "$value $units")
@@ -197,7 +197,8 @@ fun SettingsContentPreview() {
                 modifier = Modifier.fillMaxSize(),
                 topBar = { SettingsTopAppBar(onBack = {}) },
             ) { paddingValues ->
-                SettingsContent(rssiThreshold = DEFAULT_RSSI_THRESHOLD,
+                SettingsContent(
+                    rssiThreshold = DEFAULT_RSSI_THRESHOLD,
                     onRssiThresholdChange = {},
                     onRssiThresholdChangeFinished = {},
                     gracePeriod = DEFAULT_GRACE_PERIOD,
@@ -223,7 +224,8 @@ fun SettingsContentLoadingPreview() {
                 modifier = Modifier.fillMaxSize(),
                 topBar = { SettingsTopAppBar(onBack = {}) },
             ) { paddingValues ->
-                SettingsContent(rssiThreshold = DEFAULT_RSSI_THRESHOLD,
+                SettingsContent(
+                    rssiThreshold = DEFAULT_RSSI_THRESHOLD,
                     onRssiThresholdChange = {},
                     onRssiThresholdChangeFinished = {},
                     gracePeriod = DEFAULT_GRACE_PERIOD,

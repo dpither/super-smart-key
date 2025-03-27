@@ -19,10 +19,7 @@
     <string name="change_key">Change Key</string>
     <string name="start">START</string>
     <string name="stop">STOP</string>
-    <string name="no_key_text">Secure your phone with a Bluetooth device.</string>
-    <string name="call_to_action">Link a key to get started.</string>
     <string name="key_dialog_title">Available Keys</string>
-    <string name="key_dialog_text">Select your key</string>
     <string name="empty_key_dialog_title">No keys found</string>
     <string name="empty_key_dialog_text">Try connecting a Bluetooth device</string>
     <string name="address">Address</string>
@@ -36,12 +33,12 @@
     <string name="ok">OK</string>
     <string name="cancel">Cancel</string>
     <!--Permissions-->
-    <string name="device_admin">Device\nAdmin</string>
-    <string name="device_admin_rationale">Super Smart Key requires device admin to lock your device when the selected key is outside the set range.</string>
-    <string name="location_permissions">Location\nPermissions</string>
+    <string name="device_admin">Device Admin</string>
+    <string name="device_admin_rationale">Super Smart Key requires device admin to lock this device when the connected key is out of the desired range.</string>
+    <string name="location_permissions">Location Permissions</string>
     <string name="location_rationale">Super Smart Key requires location permissions to communicate with connected Bluetooth devices and use them as keys.</string>
     <string name="location_denied_rationale">Super Smart Key requires location permissions to communicate with connected Bluetooth devices and use them as keys. This can be enabled in app info.</string>
-    <string name="bluetooth_permissions">Bluetooth\nPermissions</string>
+    <string name="bluetooth_permissions">Bluetooth Permissions</string>
     <string name="bluetooth_rationale">Super Smart Key requires Bluetooth permissions to communicate with connected Bluetooth devices and use them as keys.</string>
     <string name="bluetooth_denied_rationale">Super Smart Key requires Bluetooth permissions to communicate with connected Bluetooth devices and use them as keys. This can be enabled in app info.</string>
 </resources>

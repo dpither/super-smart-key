@@ -106,8 +106,7 @@ fun PermissionRationaleDialog(
                             .align(Alignment.CenterHorizontally)
                             .padding(16.dp)
                     )
-                    HorizontalDivider()
-                    Row(modifier = Modifier.padding(16.dp)) {
+                    Row(modifier = Modifier.padding(horizontal = 16.dp).padding(bottom = 16.dp)) {
 //                    Cancel Button
                         OutlinedButton(onClick = onDismiss, modifier = Modifier.weight(1f)) {
                             Text(text = stringResource(R.string.cancel))
@@ -166,7 +165,7 @@ fun AvailableKeysDialog(
                             color = MaterialTheme.colorScheme.primary,
                             style = MaterialTheme.typography.titleLarge
                         )
-                        Text(text = stringResource(R.string.key_dialog_text))
+//                        Text(text = stringResource(R.string.key_dialog_text))
                     }
 
                     HorizontalDivider()
@@ -177,6 +176,7 @@ fun AvailableKeysDialog(
                             horizontalAlignment = Alignment.CenterHorizontally,
                             modifier = Modifier
                                 .fillMaxWidth()
+                                .padding(16.dp)
                                 .weight(1f)
                         ) {
                             Text(
@@ -202,7 +202,6 @@ fun AvailableKeysDialog(
                             }
                         }
                     }
-                    HorizontalDivider()
 
                     Row(modifier = Modifier.padding(16.dp)) {
 //                    Cancel Button
@@ -245,8 +244,8 @@ private fun KeyRow(
         verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier
             .clickable(onClick = onClick)
+            .padding(vertical = 8.dp, horizontal = 16.dp)
             .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 8.dp)
     ) {
         RadioButton(selected = selected, onClick = null)
         Column(modifier = Modifier.padding(start = 16.dp)) {

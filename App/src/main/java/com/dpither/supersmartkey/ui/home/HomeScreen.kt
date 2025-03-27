@@ -28,7 +28,6 @@ import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.Canvas
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -68,7 +67,6 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Devices
 import androidx.compose.ui.tooling.preview.Preview
@@ -296,37 +294,6 @@ private fun HomeContent(
                     .rotate(animatedRotation)
                     .size(animatedSize)
             )
-        }
-
-//        Content when no key connected
-        AnimatedVisibility(
-            visible = key == null, enter = fadeIn(
-                animationSpec = tween(
-                    durationMillis = DEFAULT_ANIMATION_DURATION, easing = LinearEasing
-                )
-            ), exit = fadeOut(
-                animationSpec = tween(
-                    durationMillis = DEFAULT_ANIMATION_DURATION, easing = LinearEasing
-                )
-            )
-        ) {
-            Column(
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.Center,
-                modifier = Modifier.fillMaxSize()
-            ) {
-                Text(
-                    text = stringResource(R.string.no_key_text),
-                    textAlign = TextAlign.Center,
-                    style = MaterialTheme.typography.bodyLarge
-                )
-                Spacer(modifier = Modifier.size(largeIconDp + 32.dp))
-                Text(
-                    text = stringResource(R.string.call_to_action),
-                    textAlign = TextAlign.Center,
-                    style = MaterialTheme.typography.bodyLarge,
-                )
-            }
         }
 
 //        Content when key connected
