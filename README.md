@@ -8,4 +8,4 @@ automatically lock your device when they move out of a configurable range.
 
 ## License
 
-Super Smart Key is licensed under the GNU General Public License v3.0 (GPLv3), more info [here](LICENSE).
+Super Smart Key is licensed under the [GNU General Public License v3.0 (GPLv3)](LICENSE).
