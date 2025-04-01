@@ -8,8 +8,8 @@ automatically lock your device when they move out of a configurable range.
 
 ## Screenshots
 
-<img src="screenshots/home.jpg" width=30%/> <img src="screenshots/settings.jpg" width=30%/> <img src="screenshots/available_keys.jpg" width=30%/>
-<img src="screenshots/key_connected.jpg" width=30%/> <img src="screenshots/service_running.jpg" width=30%/> <img src="screenshots/key_out_of_range.jpg" width=30%/>
+<img src="screenshots/home.jpg" width=32%/> <img src="screenshots/settings.jpg" width=32%/> <img src="screenshots/available_keys.jpg" width=32%/>
+<img src="screenshots/key_connected.jpg" width=32%/> <img src="screenshots/service_running.jpg" width=32%/> <img src="screenshots/key_out_of_range.jpg" width=32%/>
 
 ## License
 
