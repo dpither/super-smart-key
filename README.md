@@ -15,11 +15,11 @@ automatically lock your device when they move out of a configurable range.
 
 ## Settings
 - RSSI Threshold [-100, -40] (dBm)
-    - The minimum signal strength required to keep the device unlocked.
+    - The minimum signal strength required to keep the device unlocked. A higher RSSI threshold generally requires a smaller distance between the device and key before locking.
 - Grace Period [10, 120] (s)
-    - The minimum time between consecutive locks.
+    - The minimum time between consecutive locks. A higher grace period give users more time to turn off the service in the event of key loss.
 - Polling Rate [1, 30] (s)
-    - The frequency of key signal strength is checks.
+    - The frequency of key signal strength checks. A higher polling rate uses less system resource but makes the device less responsive to changes in key position..
 
 ## Permissions
 
