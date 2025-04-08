@@ -74,6 +74,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import com.dpither.supersmartkey.R
 import com.dpither.supersmartkey.data.model.Key
 import com.dpither.supersmartkey.ui.theme.AppTheme
@@ -293,6 +294,9 @@ private fun CustomDialog(
     if (showAnimatedDialog) {
         Dialog(
             onDismissRequest = onDismissRequest,
+            properties = DialogProperties(
+                usePlatformDefaultWidth = false
+            )
         ) {
             Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) {
                 var animateIn by remember { mutableStateOf(false) }

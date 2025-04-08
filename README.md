@@ -1,4 +1,6 @@
-# Super Smart Key
+
+<p align="center"><img src="app/src/main/ic_launcher-playstore.png" width="150"></p>
+<h1 align="center"><b>Super Smart Key</b></h1>
 
 Have you ever wished that your phone would automatically lock when you walked away from it?
 Me neither, but my Dad did, so this project exists to solve that problem.
@@ -10,6 +12,25 @@ automatically lock your device when they move out of a configurable range.
 
 <img src="screenshots/home.jpg" width=32%/> <img src="screenshots/settings.jpg" width=32%/> <img src="screenshots/available_keys.jpg" width=32%/>
 <img src="screenshots/key_connected.jpg" width=32%/> <img src="screenshots/service_running.jpg" width=32%/> <img src="screenshots/key_out_of_range.jpg" width=32%/>
+
+## Settings
+- RSSI Threshold [-100, -40] (dBm)
+    - The minimum signal strength required to keep the device unlocked.
+- Grace Period [10, 120] (s)
+    - The minimum time between consecutive locks.
+- Polling Rate [1, 30] (s)
+    - The frequency of key signal strength is checks.
+
+## Permissions
+
+- Bluetooth (`BLUETOOTH_SCAN`, `BLUETOOTH_CONNECT` on Android 12+ otherwise, `BLUETOOTH`, `BLUETOOTH_ADMIN`, `ACCESS_FINE_LOCATION`)
+    - To connect to Bluetooth devices and use them as keys.
+- Services (`FOREGROUND_SERVICE`, `FOREGROUND_SERVICE_CONNECTED_DEVICE`)
+    - To communicate with keys and run the key service in the background.
+- Notifications (`POST_NOTIFICATIONS`)
+    - To indicate when the key service is running in the background.
+- Device Admin (`force-lock`)
+    - To allow keys to lock the device when out of range.
 
 ## License
 
