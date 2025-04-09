@@ -228,20 +228,20 @@ fun AvailableKeysDialog(
                         }
                         Spacer(modifier = Modifier.width(16.dp))
                         if (selectedKey != null && selectedKey.address == currentKey?.address) {
-//                        If selected key is the current key Disconnect Button
+//                        If selected key is the current key Unlink Button
                             Button(onClick = {
                                 onDisconnect()
                                 onDismiss()
                             }, modifier = Modifier.weight(1f)) {
-                                Text(text = stringResource(R.string.disconnect))
+                                Text(text = stringResource(R.string.unlink))
                             }
                         } else {
-//                        Else Connected Button, enabled only if a key selected
+//                        Else Link Button, enabled only if a key selected
                             Button(enabled = selectedKey != null, onClick = {
                                 onConnect()
                                 onDismiss()
                             }, modifier = Modifier.weight(1f)) {
-                                Text(text = stringResource(R.string.connect))
+                                Text(text = stringResource(R.string.link))
                             }
                         }
                     }
@@ -295,7 +295,7 @@ private fun CustomDialog(
         Dialog(
             onDismissRequest = onDismissRequest,
             properties = DialogProperties(
-                usePlatformDefaultWidth = false
+                usePlatformDefaultWidth = true,
             )
         ) {
             Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) {
@@ -328,7 +328,6 @@ private fun CustomDialog(
                             .padding(16.dp)
                             .pointerInput(Unit) { detectTapGestures { } }
                             .shadow(8.dp, shape = RoundedCornerShape(16.dp))
-                            .width(300.dp)
                             .clip(RoundedCornerShape(16.dp))
                             .background(MaterialTheme.colorScheme.surface)) {
                         content()

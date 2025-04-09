@@ -25,9 +25,9 @@
     <string name="address">Address</string>
     <string name="name">Name</string>
     <string name="status">Status</string>
-    <string name="connect">Connect</string>
+    <string name="link">Link</string>
+    <string name="unlink">Unlink</string>
     <string name="connected">Connected</string>
-    <string name="disconnect">Disconnect</string>
     <string name="disconnected">Disconnected</string>
     <string name="rssi">RSSI</string>
     <string name="ok">OK</string>

@@ -49,6 +49,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.displayCutoutPadding
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.offset
@@ -208,7 +209,8 @@ fun HomeScreen(
     Scaffold(
         modifier = modifier
             .fillMaxSize()
-            .drawBehind { drawRect(gradientBrush) },
+            .drawBehind { drawRect(gradientBrush) }
+            .displayCutoutPadding(),
         containerColor = Color.Transparent,
         topBar = { HomeTopAppBar(onSettings) },
         floatingActionButton = {
