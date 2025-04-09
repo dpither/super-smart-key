@@ -23,16 +23,21 @@ automatically lock your device when they move out of a configurable range.
 
 Super Smart Key uses Bluetooth RSSI (Received Signal Strength Indicator) to approximate the distance
 to a Bluetooth device. Currently, the app requires Bluetooth devices to be already connected to
-the mobile device to be used as keys.
+the mobile device to be a potential key candidate.
 
 To get started, tap the link button in the bottom right to link to an available key.
 Since the distance approximation can be influenced by obstructions or device output variability,
 it's helpful to observe the RSSI of the key from a desirable position. Then, set a suitable RSSI
 Threshold in settings, accessible via the gear button in the top right, before starting the service.
 
+Once the service is started, a notification will appear to indicate its presence. The service will
+periodically check for the RSSI of the linked key and if the read value is below the RSSI Threshold
+or the key has disconnected the it will lock the device even if the app is in the background. The
+service can be stopped at any time from the notification or by pressing the button within the app.
+
 > [!NOTE]
 > Not all Bluetooth devices support RSSI reading. After linking a key ensure the initial status is
-> connected to prevent instant device locking upon service start.
+> `Connected` to prevent instant device locking upon service start.
 
 > [!TIP]
 > Bluetooth beacons are solid key candidates. In fact, this project primarily used a Galaxy
