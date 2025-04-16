@@ -75,6 +75,9 @@ class KeyRepository @Inject constructor(@ApplicationContext private val context:
                         _availableKeys.value = HashMap(_availableKeys.value).apply {
                             this[device.address] = this[device.address]?.copy(name = device.name)
                         }
+                        if (_key.value?.address == device.address) {
+                            _key.update { it?.copy(name = device.name) }
+                        }
                     }
                 }
             }

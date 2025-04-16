@@ -69,16 +69,19 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
-import androidx.compose.ui.window.DialogProperties
 import com.dpither.supersmartkey.R
 import com.dpither.supersmartkey.data.model.Key
 import com.dpither.supersmartkey.ui.theme.AppTheme
 import com.dpither.supersmartkey.util.DEFAULT_ANIMATION_DURATION
+import com.dpither.supersmartkey.util.FONT_SCALE_CAP
 
 @Composable
 fun PermissionRationaleDialog(
@@ -88,52 +91,55 @@ fun PermissionRationaleDialog(
     onConfirm: () -> Unit,
     onDismiss: () -> Unit,
 ) {
+//    TODO: Fix landscape & largest text
     CustomDialog(showDialog = visible, onDismissRequest = onDismiss) {
-        CompositionLocalProvider(LocalContentColor provides MaterialTheme.colorScheme.onBackground) {
-            val gradientBrush = Brush.linearGradient(
-                colors = listOf(
-                    MaterialTheme.colorScheme.background, MaterialTheme.colorScheme.secondary
-                ),
-                start = Offset(0f, 0f),
-                end = Offset(Float.POSITIVE_INFINITY, Float.POSITIVE_INFINITY)
-            )
+        val gradientBrush = Brush.linearGradient(
+            colors = listOf(
+                MaterialTheme.colorScheme.background, MaterialTheme.colorScheme.secondary
+            ),
+            start = Offset(0f, 0f),
+            end = Offset(Float.POSITIVE_INFINITY, Float.POSITIVE_INFINITY)
+        )
 
-            Card(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .drawBehind { drawRect(gradientBrush) },
-                colors = CardDefaults.cardColors(
-                    containerColor = Color.Transparent
-                ),
-                shape = RoundedCornerShape(16.dp)
-            ) {
-                Column {
+        Card(
+            modifier = Modifier
+                .fillMaxWidth()
+                .drawBehind { drawRect(gradientBrush) },
+            colors = CardDefaults.cardColors(
+                containerColor = Color.Transparent
+            ),
+            shape = RoundedCornerShape(16.dp)
+        ) {
+            Column {
 //                Title
-                    Text(
-                        text = title,
-                        color = MaterialTheme.colorScheme.primary,
-                        style = MaterialTheme.typography.titleLarge,
-                        modifier = Modifier.padding(16.dp)
-                    )
-                    HorizontalDivider()
+                Text(
+                    text = title,
+                    color = MaterialTheme.colorScheme.primary,
+                    style = MaterialTheme.typography.titleLarge,
+                    modifier = Modifier.padding(16.dp)
+                )
+                HorizontalDivider()
 //                Rationale
-                    Text(
-                        text = rationale,
-                        style = MaterialTheme.typography.bodyLarge,
-                        modifier = Modifier
-                            .align(Alignment.CenterHorizontally)
-                            .padding(16.dp)
-                    )
-                    Row(modifier = Modifier.padding(horizontal = 16.dp).padding(bottom = 16.dp)) {
+                Text(
+                    text = rationale,
+                    style = MaterialTheme.typography.bodyLarge,
+                    modifier = Modifier
+                        .align(Alignment.CenterHorizontally)
+                        .padding(16.dp)
+                )
+                Row(
+                    modifier = Modifier
+                        .padding(horizontal = 16.dp)
+                        .padding(bottom = 16.dp)
+                ) {
 //                    Cancel Button
-                        OutlinedButton(onClick = onDismiss, modifier = Modifier.weight(1f)) {
-                            Text(text = stringResource(R.string.cancel))
-                        }
-                        Spacer(modifier = Modifier.width(16.dp))
+                    OutlinedButton(onClick = onDismiss, modifier = Modifier.weight(1f)) {
+                        Text(text = stringResource(R.string.cancel))
+                    }
+                    Spacer(modifier = Modifier.width(16.dp))
 //                    OK Button
-                        Button(onClick = onConfirm, modifier = Modifier.weight(1f)) {
-                            Text(text = stringResource(R.string.ok))
-                        }
+                    Button(onClick = onConfirm, modifier = Modifier.weight(1f)) {
+                        Text(text = stringResource(R.string.ok))
                     }
                 }
             }
@@ -153,96 +159,95 @@ fun AvailableKeysDialog(
     onDismiss: () -> Unit
 ) {
     CustomDialog(showDialog = visible, onDismissRequest = onDismiss) {
-        CompositionLocalProvider(LocalContentColor provides MaterialTheme.colorScheme.onBackground) {
-            val gradientBrush = Brush.linearGradient(
-                colors = listOf(
-                    MaterialTheme.colorScheme.background, MaterialTheme.colorScheme.secondary
-                ),
-                start = Offset(0f, 0f),
-                end = Offset(Float.POSITIVE_INFINITY, Float.POSITIVE_INFINITY)
-            )
+        val gradientBrush = Brush.linearGradient(
+            colors = listOf(
+                MaterialTheme.colorScheme.background, MaterialTheme.colorScheme.secondary
+            ),
+            start = Offset(0f, 0f),
+            end = Offset(Float.POSITIVE_INFINITY, Float.POSITIVE_INFINITY)
+        )
 
-            Card(
+        Card(
+            modifier = Modifier
+                .fillMaxWidth()
+                .drawBehind { drawRect(gradientBrush) },
+            colors = CardDefaults.cardColors(
+                containerColor = Color.Transparent
+            ),
+            shape = RoundedCornerShape(16.dp)
+        ) {
+            Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .drawBehind { drawRect(gradientBrush) },
-                colors = CardDefaults.cardColors(
-                    containerColor = Color.Transparent
-                ),
-                shape = RoundedCornerShape(16.dp)
+                    .height(400.dp)
             ) {
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(400.dp)
-                ) {
 //                Title
-                    Column(modifier = Modifier.padding(16.dp)) {
-                        Text(
-                            text = stringResource(R.string.key_dialog_title),
-                            color = MaterialTheme.colorScheme.primary,
-                            style = MaterialTheme.typography.titleLarge
-                        )
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Text(
+                        text = stringResource(R.string.key_dialog_title),
+                        color = MaterialTheme.colorScheme.primary,
+                        style = MaterialTheme.typography.titleLarge
+                    )
 //                        Text(text = stringResource(R.string.key_dialog_text))
-                    }
+                }
 
-                    HorizontalDivider()
+                HorizontalDivider()
 //                    List
-                    if (availableKeys.isEmpty()) {
-                        Column(
-                            verticalArrangement = Arrangement.Center,
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(16.dp)
-                                .weight(1f)
-                        ) {
-                            Text(
-                                text = stringResource(R.string.empty_key_dialog_title),
-                                style = MaterialTheme.typography.bodyLarge,
-                            )
-                            Text(
-                                text = stringResource(R.string.empty_key_dialog_text),
-                                style = MaterialTheme.typography.bodySmall,
-                            )
+                if (availableKeys.isEmpty()) {
+                    Column(
+                        verticalArrangement = Arrangement.Center,
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp)
+                            .weight(1f)
+                    ) {
+                        Text(
+                            text = stringResource(R.string.empty_key_dialog_title),
+                            style = MaterialTheme.typography.bodyLarge,
+                        )
+                        Text(
+                            text = stringResource(R.string.empty_key_dialog_text),
+                            style = MaterialTheme.typography.bodySmall,
+                            textAlign = TextAlign.Center
+                        )
+                    }
+                } else {
+                    LazyColumn(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .weight(1f)
+                    ) {
+                        items(availableKeys) { key ->
+                            KeyRow(name = key.name,
+                                address = key.address,
+                                selected = key.address == selectedKey?.address,
+                                onClick = { onKeySelected(key) })
+                        }
+                    }
+                }
+
+                Row(modifier = Modifier.padding(16.dp)) {
+//                    Cancel Button
+                    OutlinedButton(onClick = onDismiss, modifier = Modifier.weight(1f)) {
+                        Text(text = stringResource(R.string.cancel))
+                    }
+                    Spacer(modifier = Modifier.width(16.dp))
+                    if (selectedKey != null && selectedKey.address == currentKey?.address) {
+//                        If selected key is the current key Unlink Button
+                        Button(onClick = {
+                            onDisconnect()
+                            onDismiss()
+                        }, modifier = Modifier.weight(1f)) {
+                            Text(text = stringResource(R.string.unlink))
                         }
                     } else {
-                        LazyColumn(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .weight(1f)
-                        ) {
-                            items(availableKeys) { key ->
-                                KeyRow(name = key.name,
-                                    address = key.address,
-                                    selected = key.address == selectedKey?.address,
-                                    onClick = { onKeySelected(key) })
-                            }
-                        }
-                    }
-
-                    Row(modifier = Modifier.padding(16.dp)) {
-//                    Cancel Button
-                        OutlinedButton(onClick = onDismiss, modifier = Modifier.weight(1f)) {
-                            Text(text = stringResource(R.string.cancel))
-                        }
-                        Spacer(modifier = Modifier.width(16.dp))
-                        if (selectedKey != null && selectedKey.address == currentKey?.address) {
-//                        If selected key is the current key Unlink Button
-                            Button(onClick = {
-                                onDisconnect()
-                                onDismiss()
-                            }, modifier = Modifier.weight(1f)) {
-                                Text(text = stringResource(R.string.unlink))
-                            }
-                        } else {
 //                        Else Link Button, enabled only if a key selected
-                            Button(enabled = selectedKey != null, onClick = {
-                                onConnect()
-                                onDismiss()
-                            }, modifier = Modifier.weight(1f)) {
-                                Text(text = stringResource(R.string.link))
-                            }
+                        Button(enabled = selectedKey != null, onClick = {
+                            onConnect()
+                            onDismiss()
+                        }, modifier = Modifier.weight(1f)) {
+                            Text(text = stringResource(R.string.link))
                         }
                     }
                 }
@@ -285,6 +290,8 @@ private fun KeyRow(
 private fun CustomDialog(
     showDialog: Boolean, onDismissRequest: () -> Unit, content: @Composable () -> Unit
 ) {
+//    Adapted from: https://gist.github.com/sinasamaki/daa825d96235a18822177a2b1b323f49?ref=sinasamaki.com
+
     var showAnimatedDialog by remember { mutableStateOf(false) }
 
     LaunchedEffect(showDialog) {
@@ -294,48 +301,54 @@ private fun CustomDialog(
     if (showAnimatedDialog) {
         Dialog(
             onDismissRequest = onDismissRequest,
-            properties = DialogProperties(
-                usePlatformDefaultWidth = true,
-            )
         ) {
-            Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) {
-                var animateIn by remember { mutableStateOf(false) }
-                LaunchedEffect(Unit) { animateIn = true }
+            val cappedDensity = Density(
+                density = LocalDensity.current.density,
+                fontScale = LocalDensity.current.fontScale.coerceAtMost(FONT_SCALE_CAP)
+            )
+            CompositionLocalProvider(
+                LocalDensity provides cappedDensity,
+                LocalContentColor provides MaterialTheme.colorScheme.onBackground
+            ) {
+                Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) {
+                    var animateIn by remember { mutableStateOf(false) }
+                    LaunchedEffect(Unit) { animateIn = true }
 
 //                Dismiss when tapping outside dialog
-                Box(modifier = Modifier
-                    .pointerInput(Unit) { detectTapGestures { onDismissRequest() } }
-                    .fillMaxSize())
+                    Box(modifier = Modifier
+                        .pointerInput(Unit) { detectTapGestures { onDismissRequest() } }
+                        .fillMaxSize())
 
 //                Content Animation
-                AnimatedVisibility(
-                    visible = animateIn && showDialog, enter = fadeIn(
-                        animationSpec = tween(
-                            durationMillis = DEFAULT_ANIMATION_DURATION, easing = LinearEasing
-                        )
-                    ) + slideInVertically(animationSpec = tween(
-                        durationMillis = DEFAULT_ANIMATION_DURATION, easing = EaseIn
-                    ), initialOffsetY = { it }), exit = fadeOut(
-                        animationSpec = tween(
-                            durationMillis = DEFAULT_ANIMATION_DURATION, easing = LinearEasing
-                        )
-                    ) + slideOutVertically(animationSpec = tween(
-                        durationMillis = DEFAULT_ANIMATION_DURATION, easing = EaseOut
-                    ), targetOffsetY = { it }), label = "dialog animation"
-                ) {
-                    Box(contentAlignment = Alignment.Center,
-                        modifier = Modifier
-                            .padding(16.dp)
-                            .pointerInput(Unit) { detectTapGestures { } }
-                            .shadow(8.dp, shape = RoundedCornerShape(16.dp))
-                            .clip(RoundedCornerShape(16.dp))
-                            .background(MaterialTheme.colorScheme.surface)) {
-                        content()
-                    }
+                    AnimatedVisibility(
+                        visible = animateIn && showDialog, enter = fadeIn(
+                            animationSpec = tween(
+                                durationMillis = DEFAULT_ANIMATION_DURATION, easing = LinearEasing
+                            )
+                        ) + slideInVertically(animationSpec = tween(
+                            durationMillis = DEFAULT_ANIMATION_DURATION, easing = EaseIn
+                        ), initialOffsetY = { it }), exit = fadeOut(
+                            animationSpec = tween(
+                                durationMillis = DEFAULT_ANIMATION_DURATION, easing = LinearEasing
+                            )
+                        ) + slideOutVertically(animationSpec = tween(
+                            durationMillis = DEFAULT_ANIMATION_DURATION, easing = EaseOut
+                        ), targetOffsetY = { it }), label = "dialog animation"
+                    ) {
+                        Box(contentAlignment = Alignment.Center,
+                            modifier = Modifier
+                                .padding(16.dp)
+                                .pointerInput(Unit) { detectTapGestures { } }
+                                .shadow(8.dp, shape = RoundedCornerShape(16.dp))
+                                .clip(RoundedCornerShape(16.dp))
+                                .background(MaterialTheme.colorScheme.surface)) {
+                            content()
+                        }
 
-                    DisposableEffect(Unit) {
-                        onDispose {
-                            showAnimatedDialog = false
+                        DisposableEffect(Unit) {
+                            onDispose {
+                                showAnimatedDialog = false
+                            }
                         }
                     }
                 }

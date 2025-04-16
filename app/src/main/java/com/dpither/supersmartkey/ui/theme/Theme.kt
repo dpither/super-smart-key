@@ -20,6 +20,10 @@ package com.dpither.supersmartkey.ui.theme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.unit.Density
+import com.dpither.supersmartkey.util.FONT_SCALE_CAP
 
 private val colorScheme = darkColorScheme(
     primary = primaryDark,
@@ -63,9 +67,16 @@ private val colorScheme = darkColorScheme(
 fun AppTheme(
     content: @Composable () -> Unit
 ) {
-    MaterialTheme(
-        colorScheme = colorScheme,
-        typography = AppTypography,
-        content = content
+    val cappedDensity = Density(
+        density = LocalDensity.current.density,
+        fontScale = LocalDensity.current.fontScale.coerceAtMost(FONT_SCALE_CAP)
     )
+
+    CompositionLocalProvider(LocalDensity provides cappedDensity) {
+        MaterialTheme(
+            colorScheme = colorScheme,
+            typography = AppTypography,
+            content = content
+        )
+    }
 }

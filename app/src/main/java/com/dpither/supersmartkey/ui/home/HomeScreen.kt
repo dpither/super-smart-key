@@ -501,8 +501,12 @@ private fun KeyInfo(key: Key?) {
             }, label = "name animation"
         ) { targetName ->
             Row(verticalAlignment = Alignment.Bottom) {
-                Text(text = stringResource(R.string.name) + ": ", fontWeight = titleWeight)
-                Text(text = targetName, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                Text(
+                    text = targetName,
+                    fontWeight = titleWeight,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
             }
         }
 //        Address
@@ -520,7 +524,6 @@ private fun KeyInfo(key: Key?) {
             }, label = "address animation"
         ) { targetAddress ->
             Row {
-                Text(text = stringResource(R.string.address) + ": ", fontWeight = titleWeight)
                 Text(text = targetAddress)
             }
         }

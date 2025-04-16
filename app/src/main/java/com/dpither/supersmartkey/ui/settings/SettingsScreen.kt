@@ -17,6 +17,7 @@
 
 package com.dpither.supersmartkey.ui.settings
 
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.displayCutoutPadding
@@ -24,6 +25,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.LocalContentColor
@@ -128,42 +130,50 @@ private fun SettingsContent(
                     .align(Alignment.CenterHorizontally)
             )
         } else {
+            LazyColumn(
+                modifier = Modifier.padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
 //            RSSI threshold slider
-            SettingsIntSlider(
-                title = stringResource(R.string.rssi_threshold),
-                units = stringResource(R.string.rssi_threshold_units),
-                value = rssiThreshold,
-                onValueChange = onRssiThresholdChange,
-                onValueChangeFinished = onRssiThresholdChangeFinished,
-                minVal = MIN_RSSI_THRESHOLD,
-                maxVal = MAX_RSSI_THRESHOLD,
-                steps = (MAX_RSSI_THRESHOLD - MIN_RSSI_THRESHOLD) - 1,
-            )
-//            HorizontalDivider()
+                item {
+                    SettingsIntSlider(
+                        title = stringResource(R.string.rssi_threshold),
+                        units = stringResource(R.string.rssi_threshold_units),
+                        value = rssiThreshold,
+                        onValueChange = onRssiThresholdChange,
+                        onValueChangeFinished = onRssiThresholdChangeFinished,
+                        minVal = MIN_RSSI_THRESHOLD,
+                        maxVal = MAX_RSSI_THRESHOLD,
+                        steps = (MAX_RSSI_THRESHOLD - MIN_RSSI_THRESHOLD) - 1,
+                    )
+                }
 //            Grace period slider
-            SettingsIntSlider(
-                title = stringResource(R.string.grace_period),
-                units = stringResource(R.string.grace_period_units),
-                value = gracePeriod,
-                onValueChange = onGracePeriodChange,
-                onValueChangeFinished = onGracePeriodChangeFinished,
-                minVal = MIN_GRACE_PERIOD,
-                maxVal = MAX_GRACE_PERIOD,
-                steps = (MAX_GRACE_PERIOD - MIN_GRACE_PERIOD) - 1,
-            )
-//            HorizontalDivider()
+                item {
+                    SettingsIntSlider(
+                        title = stringResource(R.string.grace_period),
+                        units = stringResource(R.string.grace_period_units),
+                        value = gracePeriod,
+                        onValueChange = onGracePeriodChange,
+                        onValueChangeFinished = onGracePeriodChangeFinished,
+                        minVal = MIN_GRACE_PERIOD,
+                        maxVal = MAX_GRACE_PERIOD,
+                        steps = (MAX_GRACE_PERIOD - MIN_GRACE_PERIOD) - 1,
+                    )
+                }
 //            Polling rate slider
-            SettingsIntSlider(
-                title = stringResource(R.string.polling_rate),
-                units = stringResource(R.string.polling_rate_units),
-                value = pollingRate,
-                onValueChange = onPollingRateChange,
-                onValueChangeFinished = onPollingRateChangeFinished,
-                minVal = MIN_POLLING_RATE,
-                maxVal = MAX_POLLING_RATE,
-                steps = (MAX_POLLING_RATE - MIN_POLLING_RATE) - 1,
-            )
-//            HorizontalDivider()
+                item {
+                    SettingsIntSlider(
+                        title = stringResource(R.string.polling_rate),
+                        units = stringResource(R.string.polling_rate_units),
+                        value = pollingRate,
+                        onValueChange = onPollingRateChange,
+                        onValueChangeFinished = onPollingRateChangeFinished,
+                        minVal = MIN_POLLING_RATE,
+                        maxVal = MAX_POLLING_RATE,
+                        steps = (MAX_POLLING_RATE - MIN_POLLING_RATE) - 1,
+                    )
+                }
+            }
         }
 
     }
@@ -185,13 +195,16 @@ private fun SettingsIntSlider(
         inactiveTickColor = Color.Transparent,
     )
 
-    Column(modifier = Modifier.padding(horizontal = 16.dp).padding(top = 16.dp)) {
+    Column {
         Row {
             Text(text = "$title: ", fontWeight = FontWeight.SemiBold)
             Text(text = "$value $units")
         }
         val labelWidth = 48.dp
-        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
+
+        Row(
+            verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()
+        ) {
             Text(text = "$minVal", modifier = Modifier.width(labelWidth))
             Slider(
                 value = value.toFloat(),
@@ -202,7 +215,9 @@ private fun SettingsIntSlider(
                 colors = colors,
                 modifier = Modifier.weight(1f)
             )
-            Text(text = "$maxVal", textAlign = TextAlign.End, modifier = Modifier.width(labelWidth))
+            Text(
+                text = "$maxVal", textAlign = TextAlign.End, modifier = Modifier.width(labelWidth)
+            )
         }
     }
 }
@@ -216,8 +231,7 @@ fun SettingsContentPreview() {
                 modifier = Modifier.fillMaxSize(),
                 topBar = { SettingsTopAppBar(onBack = {}) },
             ) { paddingValues ->
-                SettingsContent(
-                    rssiThreshold = DEFAULT_RSSI_THRESHOLD,
+                SettingsContent(rssiThreshold = DEFAULT_RSSI_THRESHOLD,
                     onRssiThresholdChange = {},
                     onRssiThresholdChangeFinished = {},
                     gracePeriod = DEFAULT_GRACE_PERIOD,
@@ -243,8 +257,7 @@ fun SettingsContentLoadingPreview() {
                 modifier = Modifier.fillMaxSize(),
                 topBar = { SettingsTopAppBar(onBack = {}) },
             ) { paddingValues ->
-                SettingsContent(
-                    rssiThreshold = DEFAULT_RSSI_THRESHOLD,
+                SettingsContent(rssiThreshold = DEFAULT_RSSI_THRESHOLD,
                     onRssiThresholdChange = {},
                     onRssiThresholdChangeFinished = {},
                     gracePeriod = DEFAULT_GRACE_PERIOD,
