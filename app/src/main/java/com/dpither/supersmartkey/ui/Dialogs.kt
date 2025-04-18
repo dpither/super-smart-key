@@ -91,7 +91,6 @@ fun PermissionRationaleDialog(
     onConfirm: () -> Unit,
     onDismiss: () -> Unit,
 ) {
-//    TODO: Fix landscape & largest text
     CustomDialog(showDialog = visible, onDismissRequest = onDismiss) {
         val gradientBrush = Brush.linearGradient(
             colors = listOf(
@@ -120,13 +119,20 @@ fun PermissionRationaleDialog(
                 )
                 HorizontalDivider()
 //                Rationale
-                Text(
-                    text = rationale,
-                    style = MaterialTheme.typography.bodyLarge,
+                LazyColumn(
                     modifier = Modifier
-                        .align(Alignment.CenterHorizontally)
                         .padding(16.dp)
-                )
+                        .weight(1f, fill = false)
+                ) {
+                    item {
+                        Text(
+                            text = rationale,
+                            style = MaterialTheme.typography.bodyLarge,
+                            modifier = Modifier
+                                .align(Alignment.CenterHorizontally)
+                        )
+                    }
+                }
                 Row(
                     modifier = Modifier
                         .padding(horizontal = 16.dp)
@@ -188,7 +194,6 @@ fun AvailableKeysDialog(
                         color = MaterialTheme.colorScheme.primary,
                         style = MaterialTheme.typography.titleLarge
                     )
-//                        Text(text = stringResource(R.string.key_dialog_text))
                 }
 
                 HorizontalDivider()
@@ -199,7 +204,7 @@ fun AvailableKeysDialog(
                         horizontalAlignment = Alignment.CenterHorizontally,
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(16.dp)
+                            .padding(horizontal = 16.dp)
                             .weight(1f)
                     ) {
                         Text(

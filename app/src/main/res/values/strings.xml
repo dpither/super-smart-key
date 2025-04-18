@@ -21,7 +21,7 @@
     <string name="stop">STOP</string>
     <string name="key_dialog_title">Available Keys</string>
     <string name="empty_key_dialog_title">No keys found</string>
-    <string name="empty_key_dialog_text">Try connecting a Bluetooth device</string>
+    <string name="empty_key_dialog_text">Try connecting to a Bluetooth device</string>
     <string name="status">Status</string>
     <string name="link">Link</string>
     <string name="unlink">Unlink</string>
