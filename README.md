@@ -15,8 +15,8 @@ your device when they move out of a configurable range.
 ## Screenshots
 
 <p align="center">
-<img src="screenshots/home.jpg" width=32%/> <img src="screenshots/settings.jpg" width=32%/> <img src="screenshots/available_keys.jpg" width=32%/>
-<img src="screenshots/key_connected.jpg" width=32%/> <img src="screenshots/service_running.jpg" width=32%/> <img src="screenshots/key_out_of_range.jpg" width=32%/>
+<img src="images/home.jpg" width=32%/> <img src="images/settings.jpg" width=32%/> <img src="images/available_keys.jpg" width=32%/>
+<img src="images/key_connected.jpg" width=32%/> <img src="images/service_running.jpg" width=32%/> <img src="images/key_out_of_range.jpg" width=32%/>
 </p>
 
 ## How It Works
