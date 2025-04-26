@@ -1,7 +1,8 @@
 <p align="center"><img src="app/src/main/ic_launcher-playstore.png" width="150"></p>
 <h1 align="center"><b>Super Smart Key</b></h1>
 <p align="center">
-    <img alt="GitHub Release" src="https://img.shields.io/github/v/release/dpither/super-smart-key">
+<a href="https://github.com/dpither/super-smart-key/releases/latest">
+    <img alt="GitHub Release" src="https://img.shields.io/github/v/release/dpither/super-smart-key"></a>
 
   <a href="https://developer.android.com/about/versions/pie">
     <img alt="Android 9+" src="https://img.shields.io/badge/Android-9+-3DDC84?logo=android"></a>
@@ -17,9 +18,11 @@ automatically lock
 your device when they move out of a configurable range.
 
 ## Download
+
 <a href="https://github.com/dpither/super-smart-key/releases/latest"><img height=70 alt="Get it on Github" src="images/get_it_on_github.png"></a>
 
-Super Smart Key is also in closed testing on Google Play, if you would like to contribute to its full release there send your gmail to dylanpitherdev@gmail.com.
+Super Smart Key is also in closed testing on Google Play, if you would like to contribute to its
+full release there send your gmail to dylanpitherdev@gmail.com.
 
 ## Screenshots
 
