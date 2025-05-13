@@ -23,6 +23,11 @@ import android.bluetooth.BluetoothGatt
 import android.bluetooth.BluetoothGattCallback
 import android.bluetooth.BluetoothManager
 import android.bluetooth.BluetoothProfile
+import android.bluetooth.le.BluetoothLeScanner
+import android.bluetooth.le.ScanCallback
+import android.bluetooth.le.ScanFilter
+import android.bluetooth.le.ScanResult
+import android.bluetooth.le.ScanSettings
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
@@ -48,6 +53,7 @@ import javax.inject.Singleton
 
 private const val TAG = "KEY_REPO"
 private const val NULL_DEVICE_NAME = "Unnamed Device"
+private const val CUSTOM_KEY_NAME = "Super Smart Key"
 
 @SuppressLint("MissingPermission")
 @Singleton
@@ -55,13 +61,15 @@ class KeyRepository @Inject constructor(@ApplicationContext private val context:
     private val _key = MutableStateFlow<Key?>(null)
     val key: Flow<Key?> = _key
 
-    private val _availableKeys = MutableStateFlow(hashMapOf<String, Key>())
-    val availableKeys: Flow<HashMap<String, Key>> = _availableKeys
+    private val _availableKeys = MutableStateFlow(mapOf<String, Key>())
+    val availableKeys: Flow<Map<String, Key>> = _availableKeys
 
     private val bluetoothManager =
         context.getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager
     private val bluetoothAdapter = bluetoothManager.adapter
     private var bluetoothGatt: BluetoothGatt? = null
+    private var bluetoothLeScanner: BluetoothLeScanner? = null
+    private var scanning = false
 
     private val nameReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: Intent?) {
@@ -93,22 +101,27 @@ class KeyRepository @Inject constructor(@ApplicationContext private val context:
 
     fun refreshAvailableKeys() {
         _availableKeys.update { hashMapOf() }
+        startCustomKeyScan()
 
-        val newMap = hashMapOf<String, Key>()
         bluetoothManager.getConnectedDevices(BluetoothProfile.GATT).forEach { device ->
             if (device.name == null) {
                 getDeviceName(device)
             }
-            newMap[device.address] = Key(
+            val key = Key(
                 name = device.name ?: NULL_DEVICE_NAME,
                 address = device.address,
                 lastSeen = null,
                 rssi = null,
                 connected = false
             )
+            addAvailableKey(address = device.address, key = key)
         }
+    }
 
-        _availableKeys.update { newMap }
+    private fun addAvailableKey(address: String, key: Key) {
+        val availableKeysCopy = _availableKeys.value.toMutableMap()
+        availableKeysCopy[address] = key
+        _availableKeys.update { availableKeysCopy }
     }
 
     fun connectKey(key: Key) {
@@ -195,6 +208,50 @@ class KeyRepository @Inject constructor(@ApplicationContext private val context:
                 Log.d(TAG, "${device.address} name is still null, retrying")
                 device.fetchUuidsWithSdp()
             }
+        }
+    }
+
+    private val bluetoothScanCallback = object : ScanCallback() {
+        override fun onScanResult(callbackType: Int, result: ScanResult) {
+            val device = result.device
+            if (!_availableKeys.value.containsKey(device.address)) {
+                Log.d(TAG, "Found new custom key device: ${device.address}")
+                val key = Key(
+                    name = device.name,
+                    address = device.address,
+                    lastSeen = null,
+                    rssi = result.rssi,
+                    connected = false
+                )
+                addAvailableKey(address = device.address, key = key)
+            }
+        }
+    }
+
+    private fun startCustomKeyScan() {
+        if (scanning) {
+            return
+        }
+
+        bluetoothLeScanner = bluetoothAdapter.bluetoothLeScanner
+        val filter = ScanFilter.Builder().setDeviceName(CUSTOM_KEY_NAME).build()
+        val settings = ScanSettings.Builder().setScanMode(ScanSettings.SCAN_MODE_LOW_POWER).build()
+
+        bluetoothLeScanner?.startScan(listOf(filter), settings, bluetoothScanCallback)
+        scanning = true
+        Log.d(TAG, "Custom key scan started")
+
+        CoroutineScope(Dispatchers.IO).launch {
+            delay(5000)
+            stopCustomKeyScan()
+        }
+    }
+
+    private fun stopCustomKeyScan() {
+        if (scanning) {
+            bluetoothLeScanner?.stopScan(bluetoothScanCallback)
+            scanning = false
+            Log.d(TAG, "Custom key scan stopped")
         }
     }
 }

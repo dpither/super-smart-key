@@ -60,7 +60,7 @@ within the app.
 
 > [!TIP]
 > Bluetooth beacons are solid key candidates. In fact, this project primarily used a Galaxy
-> SmartTag2 for testing.
+> SmartTag2 for testing, however, they currently do not work on Android 12+. 
 
 ## Settings
 
