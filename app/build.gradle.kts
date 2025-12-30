@@ -29,8 +29,8 @@ android {
         applicationId = "com.dpither.supersmartkey"
         minSdk = 28
         targetSdk = 35
-        versionCode = 2
-        versionName = "1.1.0"
+        versionCode = 3
+        versionName = "1.1.1"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -40,6 +40,7 @@ android {
             ndk.debugSymbolLevel = "FULL"
             isDebuggable = false
             isMinifyEnabled = true
+            isShrinkResources = true
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro"
             )

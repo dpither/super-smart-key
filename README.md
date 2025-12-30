@@ -36,6 +36,7 @@ full release there send your gmail to dylanpitherdev@gmail.com.
 Super Smart Key uses Bluetooth RSSI (Received Signal Strength Indicator) to approximate the distance
 to a Bluetooth
 device. Currently, the app requires Bluetooth devices to be already connected to the mobile device
+or be named "[Super Smart Key](#custom-keys)"
 to be considered
 a potential key candidate.
 
@@ -60,7 +61,7 @@ within the app.
 
 > [!TIP]
 > Bluetooth beacons are solid key candidates. In fact, this project primarily used a Galaxy
-> SmartTag2 for testing, however, they currently do not work on Android 12+. 
+> SmartTag2 for testing, however, [they currently do not work on Android 12+](#known-issues).
 
 ## Settings
 
@@ -77,14 +78,20 @@ within the app.
 ## Permissions
 
 - Bluetooth (`BLUETOOTH_SCAN`, `BLUETOOTH_CONNECT` on Android 12+ otherwise, `BLUETOOTH`,
-  `BLUETOOTH_ADMIN`, `ACCESS_FINE_LOCATION`)
+  `BLUETOOTH_ADMIN`)
     - To connect to Bluetooth devices and use them as keys.
+- Location (`ACCESS_FINE_LOCATION`)
+    - To find BLE beacons and infer distance between the device and a key.
 - Services (`FOREGROUND_SERVICE`, `FOREGROUND_SERVICE_CONNECTED_DEVICE`)
     - To communicate with keys and run the key service in the background.
 - Notifications (`POST_NOTIFICATIONS`)
     - To indicate when the key service is running in the background.
 - Device Admin (`force-lock`)
     - To allow keys to lock the device when out of range.
+
+## Known Issues
+
+- Cannot read RSSI of Galaxy SmartTag2 on Android 12+
 
 ## Under The Hood
 
@@ -109,6 +116,26 @@ with [compose navigation](https://developer.android.com/develop/ui/compose/navig
 - [Hilt](https://dagger.dev/hilt/) (Dependency injection)
 - [Process Lifecycle](https://developer.android.com/reference/androidx/lifecycle/ProcessLifecycleOwner) (
   Application lifecycle tracking)
+
+## Custom Keys
+
+The current design of Super Smart Key allows for any connected Bluetooth device to potentially used
+as a key. However, as I have developed the app, I have found not all Bluetooth devices can work as
+keys due to limitations on reading their RSSI (or unresolved bugs). The easiest way to resolve this
+issue is to use a custom key.
+
+This repository contains
+a [custom key sketch](https://github.com/dpither/super-smart-key/blob/main/key/custom-super-smart-key/custom-super-smart-key.ino)
+which I have run on an Arduino Nano ESP32, and have successfully been able to use as a key on a
+range of Android devices (9-14).
+
+## Roadmap
+
+Currently I power the ESP32 with a power bank, which is pretty bulky and unrealistic to be actually
+used. Further development on this project will likely be focused on creating a better custom key.
+
+For starters, a smaller power source and nice housing. Eventually maybe even a smaller chip since the
+ESP32 may be overkill for what I really need out of the key.
 
 ## License
 

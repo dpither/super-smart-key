@@ -368,8 +368,8 @@ private fun PermissionRationaleDialogPreview() {
     AppTheme {
         Surface {
             PermissionRationaleDialog(visible = true,
-                title = stringResource(R.string.bluetooth_permissions),
-                rationale = stringResource(R.string.bluetooth_denied_rationale),
+                title = stringResource(R.string.api_31_bluetooth_title),
+                rationale = stringResource(R.string.api_31_bluetooth_denied_rationale),
                 onConfirm = {},
                 onDismiss = {})
         }

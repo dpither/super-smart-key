@@ -17,6 +17,15 @@ void setup() {
   pServer->setCallbacks(&serverCallbacks);
 
   NimBLEAdvertising* pAdvertising = NimBLEDevice::getAdvertising();
+  // pAdvertising->setScanResponse(true);
+  // BLEAdvertisementData scanData;
+  // scanData.setName("ESP32_Test");
+  // pAdvertising->setScanResponseData(scanData);
+  pAdvertising->setMinInterval(0x20);
+  pAdvertising->setMaxInterval(0x40);
+  BLEAdvertisementData advData;
+  advData.setFlags(0x06);  // General discoverable, BR/EDR not supported
+  pAdvertising->setAdvertisementData(advData);
   pAdvertising->setName("Super Smart Key");
   pAdvertising->start();
 }

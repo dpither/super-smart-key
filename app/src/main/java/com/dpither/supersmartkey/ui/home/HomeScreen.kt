@@ -22,6 +22,7 @@ import android.app.admin.DevicePolicyManager
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.content.res.Configuration
 import android.os.Build
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -90,6 +91,7 @@ import androidx.compose.ui.tooling.preview.Devices
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.tooling.preview.PreviewScreenSizes
 import androidx.compose.ui.unit.dp
+import androidx.core.content.ContextCompat
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.dpither.supersmartkey.R
@@ -121,6 +123,7 @@ fun HomeScreen(
             listOf(
                 Manifest.permission.BLUETOOTH_SCAN,
                 Manifest.permission.BLUETOOTH_CONNECT,
+                Manifest.permission.ACCESS_FINE_LOCATION,
             )
         } else {
             listOf(Manifest.permission.ACCESS_FINE_LOCATION)
@@ -128,22 +131,76 @@ fun HomeScreen(
     )
 
     val bluetoothPermissionTitle = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-        stringResource(R.string.bluetooth_permissions)
+        if (ContextCompat.checkSelfPermission(
+                context,
+                Manifest.permission.ACCESS_FINE_LOCATION
+            ) == PackageManager.PERMISSION_GRANTED
+        ) {
+            stringResource(R.string.api_31_bluetooth_title)
+        } else if (ContextCompat.checkSelfPermission(
+                context,
+                Manifest.permission.BLUETOOTH_SCAN
+            ) == PackageManager.PERMISSION_GRANTED && ContextCompat.checkSelfPermission(
+                context,
+                Manifest.permission.BLUETOOTH_CONNECT
+            ) == PackageManager.PERMISSION_GRANTED
+        ) {
+            stringResource(R.string.api_31_location_title)
+        } else {
+            stringResource(R.string.api_31_all_title)
+
+        }
     } else {
-        stringResource(R.string.location_permissions)
+        stringResource(R.string.api_30_title)
     }
 
     val bluetoothPermissionRationale = if (bluetoothPermissionState.shouldShowRationale) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            stringResource(R.string.bluetooth_rationale)
+            if (ContextCompat.checkSelfPermission(
+                    context,
+                    Manifest.permission.ACCESS_FINE_LOCATION
+                ) == PackageManager.PERMISSION_GRANTED
+            ) {
+                stringResource(R.string.api_31_bluetooth_rationale)
+            } else if (ContextCompat.checkSelfPermission(
+                    context,
+                    Manifest.permission.BLUETOOTH_SCAN
+                ) == PackageManager.PERMISSION_GRANTED && ContextCompat.checkSelfPermission(
+                    context,
+                    Manifest.permission.BLUETOOTH_CONNECT
+                ) == PackageManager.PERMISSION_GRANTED
+            ) {
+                stringResource(R.string.api_31_location_rationale)
+            } else {
+                stringResource(R.string.api_31_all_rationale)
+
+            }
         } else {
-            stringResource(R.string.location_rationale)
+            stringResource(R.string.api_30_rationale)
         }
     } else {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            stringResource(R.string.bluetooth_denied_rationale)
+            if (ContextCompat.checkSelfPermission(
+                    context,
+                    Manifest.permission.ACCESS_FINE_LOCATION
+                ) == PackageManager.PERMISSION_GRANTED
+            ) {
+                stringResource(R.string.api_31_bluetooth_denied_rationale)
+            } else if (ContextCompat.checkSelfPermission(
+                    context,
+                    Manifest.permission.BLUETOOTH_SCAN
+                ) == PackageManager.PERMISSION_GRANTED && ContextCompat.checkSelfPermission(
+                    context,
+                    Manifest.permission.BLUETOOTH_CONNECT
+                ) == PackageManager.PERMISSION_GRANTED
+            ) {
+                stringResource(R.string.api_31_location_denied_rationale)
+            } else {
+                stringResource(R.string.api_31_all_denied_rationale)
+
+            }
         } else {
-            stringResource(R.string.location_denied_rationale)
+            stringResource(R.string.api_30_denied_rationale)
 
         }
     }
