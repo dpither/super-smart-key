@@ -17,19 +17,19 @@ Have you ever wished that your phone would automatically lock when you walked aw
 neither, but my
 Dad did, so this project exists to solve that problem.
 
-## Download
-
-<a href="https://github.com/dpither/super-smart-key/releases/latest"><img height=70 alt="Get it on Github" src="images/get_it_on_github.png"></a>
-
-Super Smart Key is also in closed testing on Google Play, if you would like to contribute to its
-full release there send your gmail to dylanpitherdev@gmail.com.
-
 ## Screenshots
 
 <p align="center">
 <img src="images/home.jpg" width=32%/> <img src="images/settings.jpg" width=32%/> <img src="images/available_keys.jpg" width=32%/>
 <img src="images/key_connected.jpg" width=32%/> <img src="images/service_running.jpg" width=32%/> <img src="images/key_out_of_range.jpg" width=32%/>
 </p>
+
+## Download
+
+<a href="https://github.com/dpither/super-smart-key/releases/latest"><img height=70 alt="Get it on Github" src="images/get_it_on_github.png"></a>
+
+Super Smart Key is also in closed testing on Google Play, if you would like to contribute to its
+full release there send your gmail to dylanpitherdev@gmail.com.
 
 ## How It Works
 
