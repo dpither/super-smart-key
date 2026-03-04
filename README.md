@@ -9,13 +9,13 @@
 
 </p> 
 
-Have you ever wished that your phone would automatically lock when you walked away from it? Me
-neither, but my
-Dad did, so this project exists to solve that problem.
-
 Super Smart Key is an Android 9+ app that turns connected Bluetooth devices into smart keys that
 automatically lock
 your device when they move out of a configurable range.
+
+Have you ever wished that your phone would automatically lock when you walked away from it? Me
+neither, but my
+Dad did, so this project exists to solve that problem.
 
 ## Download
 
@@ -136,7 +136,3 @@ used. Further development on this project will likely be focused on creating a b
 
 For starters, a smaller power source and nice housing. Eventually maybe even a smaller chip since the
 ESP32 may be overkill for what I really need out of the key.
-
-## License
-
-Super Smart Key is licensed under the [GNU General Public License v3.0 (GPLv3)](LICENSE).
